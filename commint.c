@@ -7,51 +7,10 @@
 
 #define true 1
 #define false 0
-
-char *ler(int m, char *linha, char *palavra)
-{
-
-    // ler palavra
-    while (linha[m] != ' ')
-    {
-        palavra[m] = linha[m];
-        m++;
-    }
-
-    return palavra;
-}
-
-void leTudo(char *linha, char ***comandos)
-{
-    // char **comandos[10][30];
-
-    int m = 0, f = 0, n = 0;
-
-    // ler palavra
-    while (linha[m] != '\0')
-    {
-        if (linha[m] != ' ')
-        {
-            *(comandos[n][f]) = linha[m];
-            printf("\n%c", *(comandos[n][f]));
-            printf("penis");
-            fflush(stdout);
-            m++;
-            f++;
-        }
-        else
-        {
-            m++;
-            n++;
-            f = 0;
-        }
-    }
-
-    return;
-}
+#define MAX_LINHA 100
 int main()
 {
-    char linha[12];
+    char linha[MAX_LINHA];
     char **comandos;
     int argcont = 0;
     int back;
@@ -81,7 +40,7 @@ int main()
     while (true)
     {
         // LER O COMANDO
-        fgets(linha, 12, stdin);
+        fgets(linha, MAX_LINHA, stdin);
         // leTudo(linha, &comandos);
 
         linha[strcspn(linha, "\n")] = '\0';

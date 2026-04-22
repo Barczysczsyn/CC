@@ -4,6 +4,8 @@
 #include <string.h>
 #include <netdb.h>
 
+//ele funciona na verdade, esses erros sao so incompatibilidade do vs code
+
 int main(int argc ,char** argv){
 
     int meu_socket;
