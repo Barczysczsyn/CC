@@ -1,0 +1,105 @@
+<html>
+
+<head>
+
+    <script src="https://code.jscharting.com/latest/jscharting.js"></script>
+</head>
+
+<body>
+
+    <main>
+        <div style="display: flex;">
+            <div class="bloco">
+                <p>Earning</p>
+                <p>23424</p>
+            </div>
+            <div class="bloco">
+                <p>Share</p>
+                <p>23424</p>
+            </div>
+            <div class="bloco">
+                <p>Likes</p>
+                <p>23424</p>
+            </div>
+            <div class="bloco">
+                <p>Rating</p>
+                <p>23424</p>
+            </div>
+        </div>
+
+        <div style="display: flex;">
+            <div>
+                <div>
+                    <div id="chartDiv" class="graficos" style="max-width: 500px; height: 300px;"></div>
+                </div>
+                <div>
+                    <div id="chartDiv2" class="graficos" style="max-width: 500px; height: 300px;"></div>
+                </div>
+            </div>
+            <div>
+                <div id="chartDiv3" class="graficos" style="max-width: 500px; height: 300px;"></div>
+            </div>
+        </div>
+    </main>
+</body>
+<script>
+    const colunas = new JSC.Chart("chartDiv", {
+        type: "column",
+        series: [{
+            name: "Teams",
+            points: [{
+                x: "A",
+                y: 10
+            }, {
+                x: "B",
+                y: 5
+            }]
+        }]
+    });
+
+    colunas.options({
+        defaultSeries_palette: "rainforest"
+    });
+
+    const ondas = new JSC.Chart("chartDiv2", {
+        type: "area",
+        series: [{
+            name: "Teams",
+            points: [{
+                x: "A",
+                y: 10
+            }, {
+                x: "B",
+                y: 5
+            }]
+        }]
+    });
+
+    const donut = new JSC.Chart("chartDiv3", {
+        type: "pie donut",
+        series: [{
+            name: "Teams",
+            points: [{
+                x: "A",
+                y: 11
+            }, {
+                x: "B",
+                y: 9
+            }]
+        }]
+    });
+</script>
+<style>
+    .bloco {
+        padding: 50px;
+        margin: 50px;
+        background-color: bisque;
+    }
+    
+    .graficos {
+        padding: 80px;
+        background-color: bisque;
+    }
+</style>
+
+</html>

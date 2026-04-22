@@ -1,0 +1,77 @@
+.principal{
+     margin: 20%;
+     background-color: paleturquoise;
+}
+
+h1{
+  background: -webkit-linear-gradient(yellow,rgb(255, 145, 0));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+    font-size: 50px;
+}
+h3{
+    color: red;
+    font-size: large;
+}
+
+header{
+    /*background-color: gainsboro;
+    */
+    background-image: linear-gradient(purple,blue); 
+    padding: 2%;
+}
+
+.btn{
+    background-color: brown;
+    border-width: 1px;
+    border-color: black;
+    padding: 8px;
+
+    border-radius: 15px;
+
+}
+.btn:hover{
+
+    background-color: rgb(163, 82, 82);
+}
+.btn:active{
+
+    background-color: rgb(235, 217, 217);
+}
+#titulo{
+    text-align: center;
+}
+
+
+@keyframes myAnimation {
+  from {background-color: red;
+    height: 100px;
+}
+  to {background-color: yellow;
+height: 25px;}
+}
+
+@keyframes arcoiris {
+  0%   {background-color: red;}
+  12%   {background-color: orange;}
+  25%  {background-color: yellow;}
+  37%   {background-color: lime;}
+  50%   {background-color: cyan;}
+  62%  {background-color: blue;}
+  75%   {background-color: purple;}
+  87%   {background-color:deeppink;}
+  100%   {background-color:red;}
+}
+
+.anima{
+  animation-name: myAnimation;
+  animation-duration: 4s;
+}
+
+
+.arcoiro{
+  animation-name: arcoiris;
+  animation-duration: 10s;
+  padding: 40px;
+  animation-iteration-count: infinite;
+}
