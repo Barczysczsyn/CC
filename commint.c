@@ -11,48 +11,46 @@
 int main()
 {
     char linha[MAX_LINHA];
-    char **comandos;
+    char *comandos[50];
     int argcont = 0;
-    int back;
+    int back = 0;
+    /*
     pid_t pid;
-    /* fork another process */
+   // fork another process
     pid = fork();
     if (pid < 0)
-    { /* error occurred */
+    { // error occurred
         fprintf(stderr, "Fork Failed");
         exit(-1);
     }
     else if (pid == 0)
-    { /* child process */
+    { // child process
 
         execlp("/bin/ls", "ls", "-l", NULL);
     }
     else
-    { /* parent process */
-        /* parent will wait for the child to complete */
+    { // parent process
+        // parent will wait for the child to complete
         wait(NULL);
         printf("Child Complete");
         // exit(0);
     }
+    //*/
 
     // corpo do ngc
 
     while (true)
     {
-        // LER O COMANDO
-        fgets(linha, MAX_LINHA, stdin);
-        // leTudo(linha, &comandos);
 
-        linha[strcspn(linha, "\n")] = '\0';
-        char *token = strtok(linha, " \t");
+        fgets(linha,MAX_LINHA,stdin);
 
-        printf("linha: %s", linha);
-        fflush(stdout);
+        linha[strcspn(linha ,"\n") ] = '\0';
 
-        while (token != NULL)
-        {
+        char *token = strtok(linha," \t");
+
+        while(token != NULL){
             comandos[argcont] = token;
-            argcont++;
+            ++argcont;
             token = strtok(NULL, " \t");
         }
         comandos[argcont] = NULL;
@@ -86,7 +84,7 @@ int main()
             }
             else
             {
-                //nunnes
+                // nunnes
             }
         }
         if (strcmp(comandos[0], "cd") == 0)
