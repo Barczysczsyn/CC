@@ -59,7 +59,7 @@ int main()
 
         // printar os comandos
         for (int i = 0; i < argcont; i++)
-            printf("comandos[%d] %s\n", i, comandos[i]);
+            printf("\ncomandos[%d] %s", i, comandos[i]);
 
         fflush(stdout);
         // printar os comandos
@@ -74,16 +74,19 @@ int main()
 
         // LER O COMANDO
 
-        if (strcmp(comandos[0], "ls") == 0)
+        if ((strcmp(comandos[0], "ls") == 0))
         {
-
-            if (strcmp(comandos[1], "-a") == 0)
+            if (argcont == 1)
+            {
+                execlp("/bin/ls", "ls", NULL);
+            }
+            else if (strcmp(comandos[1], "-a") == 0)
             {
                 execlp("/bin/ls", "ls", "-a", NULL);
             }
             else
             {
-                execlp("/bin/ls", "ls", NULL);
+                //nunnes
             }
         }
         if (strcmp(comandos[0], "cd") == 0)
