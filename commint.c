@@ -4,6 +4,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <dirent.h>
 
 #define true 1
 #define false 0
@@ -44,8 +45,7 @@ int main()
 
         // printing current working directory
         char caminho[50];
-        printf("\n%s", getcwd(caminho, 100));
-        printf("> ");
+        printf("\n%s>", getcwd(caminho, 100));
 
         fgets(linha, MAX_LINHA, stdin);
 
@@ -85,8 +85,8 @@ int main()
         if (strcmp(comandos[0], "exit") == 0)
         {
             return 0;
-            //break;
-            //  exit(0);
+            // break;
+            //   exit(0);
         }
         else
         {
@@ -116,13 +116,13 @@ int main()
                     else
                     {
                         // nunnes
+                        perror("o cara digitou uma coisa mto doida");
                     }
                 }
                 if (strcmp(comandos[0], "cd") == 0)
                 {
-
-                    /// execlp("/bin/ls", "ls", NULL);
                     chdir(comandos[1]);
+                    // opendir(comandos[1]);
                 }
                 // EXECUTAR O COMANDO
             }
