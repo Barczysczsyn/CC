@@ -9,11 +9,13 @@
 #define true 1
 #define false 0
 #define MAX_LINHA 100
+#define MAX_COMANDOS 50
+
 int main()
 {
     char linha[MAX_LINHA];
     // mudar isso daqui fez funcionar aparentemente
-    char *comandos[50];
+    char *comandos[MAX_COMANDOS];
 
     /*
     pid_t pid;
@@ -126,6 +128,26 @@ int main()
                     // opendir(comandos[1]);
                 }
 
+                if (strcmp(comandos[0], "executar") == 0)
+                {
+                    if (argcont == 2)
+                    {
+                        //nao tem argumentos
+                        //FIXME provavelmente nao funciona ainda
+                        execlp(comandos[1],comandos[1], NULL);
+                    }else{
+                        //tem mais argumentos
+
+                        char *argumentos[MAX_COMANDOS];
+
+                        for (int i = 0; i < argcont-2; i++)
+                        {
+                            strcpy(argumentos[i],comandos[i+2]);
+                        }
+                        execvp(comandos[1], argumentos);
+                    }
+                }
+
                 if (strcmp(comandos[0], "tree") == 0)
                 {
                     // eu imagino q seja assim
@@ -152,6 +174,7 @@ int main()
                         // abrir a pasta
 
                         FILE *fptr = fopen("stat", "r"); // Open in "r" (read) mode
+                        //TODO tudo funciona, exceto o fopen por algum motivo
                         char buffer[500];
 
                         if (fptr == NULL)
@@ -165,6 +188,8 @@ int main()
                         {
                             fgets(buffer, 500, fptr);
                             printf("%s", buffer);
+
+                            //TODO fazer o algoritmo de imprimir a tal arvore
                         }
                         //}
                     }
@@ -174,7 +199,11 @@ int main()
             else
             { // parent process
                 // parent will wait for the child to complete
-                wait(NULL);
+                // TODO se certificar de que isso funciona
+                if (back == 0)
+                {
+                    wait(NULL);
+                }
                 // printf("Child Complete");
                 //  exit(0);
             }
