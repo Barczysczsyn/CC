@@ -65,7 +65,7 @@ int main()
         /*
         for (int i = 0; i < argcont; i++)
             printf("\ncomandos[%d] %s", i, comandos[i]);
-            */
+            //*/
 
         fflush(stdout);
         // printar os comandos
@@ -84,9 +84,10 @@ int main()
 
         if (strcmp(comandos[0], "exit") == 0)
         {
+            // FIXME se vc dar exit fora da pasta inicial ele nao sai na hora
+            break;
             return 0;
-            // break;
-            //   exit(0);
+            // exit(0);
         }
         else
         {
@@ -123,6 +124,48 @@ int main()
                 {
                     chdir(comandos[1]);
                     // opendir(comandos[1]);
+                }
+
+                if (strcmp(comandos[0], "tree") == 0)
+                {
+                    // eu imagino q seja assim
+                    char pastaAlvo[100] = "/proc/";
+                    strcat(pastaAlvo,comandos[1]);
+                    printf("%s", pastaAlvo);
+                    DIR *pasta = opendir(pastaAlvo);
+                    if (pasta == NULL)
+                    {
+                        printf("Error: Não foi possivel abrir a pasta.");
+                    }
+                    struct dirent *de;
+
+                     while ((de = readdir(pasta)) != NULL)
+                    {
+                        //de = readdir(pasta);
+                        printf("\n dir '%s'", de->d_name);
+                        fflush(stdout);
+                        if (strcmp(de->d_name, "stat"))
+                        {
+                            // achou a pasta certa
+                            // abrir a pasta
+
+                            FILE *fptr = fopen("stat", "r"); // Open in "r" (read) mode
+                            char buffer[500];
+
+                            if (fptr == NULL)
+                            { // Verify the file opened successfully
+                                printf("\nError: Could not open file.");
+                                return 1;
+                            }
+
+                            // Read until fgets returns NULL (end of file)
+                            while (fgets(buffer, 500, fptr))
+                            {
+                                fgets(buffer, 500, fptr);
+                                printf("%s", buffer);
+                            }
+                        }
+                    }
                 }
                 // EXECUTAR O COMANDO
             }
