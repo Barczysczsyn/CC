@@ -30,8 +30,8 @@ void acharFilhos(char pai[10], int rec)
     // ABRIR UM ARQUIVO
     while ((de = readdir(pasta)) != NULL)
     {
-        // de = readdir(pasta);
-        // printf("\n arquivo '%s'", de->d_name);
+        //de = readdir(pasta);
+        //printf("\n arquivo '%s'", de->d_name);
         // fflush(stdout);
 
         // checa se o nome da pasta é um numero,e se nao é o proprio pai
@@ -52,7 +52,9 @@ void acharFilhos(char pai[10], int rec)
             }
             char buffer[50];
             fgets(buffer, 50, arqv);
-            // pegar o pai do processo
+            
+            //fechar o arquivo, agora que arqc nao esta mais sendo usado
+            fclose(arqv);
 
             // printf("\nbuffer %s", buffer);
             // fflush(stdout);
@@ -66,6 +68,7 @@ void acharFilhos(char pai[10], int rec)
             // while (token != NULL)
             for (int i = 0; i < 4; i++)
             {
+                //ele só faz ate o 3 argumento
                 strcpy(argumentos[ix], token);
                 ++ix;
                 token = strtok(NULL, " ");
@@ -83,7 +86,6 @@ void acharFilhos(char pai[10], int rec)
                 acharFilhos(de->d_name,rec + 1);
 
                 //TODO existem nomes de arquivos com espaços
-                //FIXME ele nao consegue ir alem de 2 camadas
             }
         }
     }
