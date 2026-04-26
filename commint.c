@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <dirent.h>
+#include <errno.h>
 
 #define true 1
 #define false 0
@@ -132,17 +133,19 @@ int main()
                 {
                     if (argcont == 2)
                     {
-                        //nao tem argumentos
-                        //FIXME provavelmente nao funciona ainda
-                        execlp(comandos[1],comandos[1], NULL);
-                    }else{
-                        //tem mais argumentos
+                        // nao tem argumentos
+                        // FIXME provavelmente nao funciona ainda
+                        execlp(comandos[1], comandos[1], NULL);
+                    }
+                    else
+                    {
+                        // tem mais argumentos
 
                         char *argumentos[MAX_COMANDOS];
 
-                        for (int i = 0; i < argcont-2; i++)
+                        for (int i = 0; i < argcont - 2; i++)
                         {
-                            strcpy(argumentos[i],comandos[i+2]);
+                            strcpy(argumentos[i], comandos[i + 2]);
                         }
                         execvp(comandos[1], argumentos);
                     }
@@ -174,12 +177,13 @@ int main()
                         // abrir a pasta
 
                         FILE *fptr = fopen("stat", "r"); // Open in "r" (read) mode
-                        //TODO tudo funciona, exceto o fopen por algum motivo
+                        // TODO tudo funciona, exceto o fopen por algum motivo
                         char buffer[500];
 
                         if (fptr == NULL)
                         { // Verify the file opened successfully
                             printf("\nError: Could not open file.");
+                            printf("erro %i", errno);
                             return 1;
                         }
 
@@ -189,7 +193,7 @@ int main()
                             fgets(buffer, 500, fptr);
                             printf("%s", buffer);
 
-                            //TODO fazer o algoritmo de imprimir a tal arvore
+                            // TODO fazer o algoritmo de imprimir a tal arvore
                         }
                         //}
                     }
