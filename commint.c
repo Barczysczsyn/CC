@@ -153,50 +153,30 @@ int main()
 
                 if (strcmp(comandos[0], "tree") == 0)
                 {
-                    // eu imagino q seja assim
-                    char pastaAlvo[100] = "/proc/";
+                    char pastaAlvo[50] = "/proc/";
                     strcat(pastaAlvo, comandos[1]);
-                    printf("%s", pastaAlvo);
-                    DIR *pasta = opendir(pastaAlvo);
-                    if (pasta == NULL)
-                    {
-                        printf("Error: Não foi possivel abrir a pasta.");
+                    strcat(pastaAlvo, "/stat");
+
+                    //printf("\npasta %s",pastaAlvo);
+
+                    FILE *fptr = fopen(pastaAlvo, "r"); // Open in "r" (read) mode
+                    char buffer[50];
+
+                    if (fptr == NULL)
+                    { // Verify the file opened successfully
+                        printf("\nError: Could not open file.");
+                        return 1;
                     }
-                    struct dirent *de;
 
-                    while ((de = readdir(pasta)) != NULL)
+                    // Read until fgets returns NULL (end of file)
+                    while (fgets(buffer, 50, fptr))
                     {
-                        // de = readdir(pasta);
-                        printf("\n arquivo '%s'", de->d_name);
-                        fflush(stdout);
-                        // nesse ponto ele consegue ler todos os arquivos
+                        fgets(buffer, 50, fptr);
+                        printf("%s", buffer);
 
-                        // if (strcmp(de->d_name, "stat") == 0)
-                        // {
-                        // achou a pasta certa
-                        // abrir a pasta
-
-                        FILE *fptr = fopen("stat", "r"); // Open in "r" (read) mode
-                        // TODO tudo funciona, exceto o fopen por algum motivo
-                        char buffer[500];
-
-                        if (fptr == NULL)
-                        { // Verify the file opened successfully
-                            printf("\nError: Could not open file.");
-                            printf("erro %i", errno);
-                            return 1;
-                        }
-
-                        // Read until fgets returns NULL (end of file)
-                        while (fgets(buffer, 500, fptr))
-                        {
-                            fgets(buffer, 500, fptr);
-                            printf("%s", buffer);
-
-                            // TODO fazer o algoritmo de imprimir a tal arvore
-                        }
-                        //}
+                        // TODO fazer o algoritmo de imprimir a tal arvore
                     }
+                    //}
                 }
                 // EXECUTAR O COMANDO
             }
