@@ -12,13 +12,28 @@
 #define MAX_LINHA 100
 #define MAX_COMANDOS 50
 
-void acharFilhos(char pai[10], int rec)
+void printaArvore(char caminho[50], int rec)
 {
+    FILE *arqv = fopen(caminho, "r");
+
+    char argumentos[4][50];
+    // o pai é o argumentos 3
+    fscanf(arqv, "%d (%[^)]) %c %d",
+           argumentos[0],
+           argumentos[1],
+           argumentos[2],
+           argumentos[3]);
+
     // imprimir esse arquivo
     printf("\n");
     for (int i = 0; i < rec; i++)
-        printf("-");
-    printf("%s", pai);
+        printf(" ");
+    // resolvi colocar assim
+    printf("|-%d %s %c %d", argumentos[0], argumentos[1], argumentos[2], argumentos[3]);
+}
+void acharFilhos(char pai[10], int rec)
+{
+
     // abrir a pasta onde estao os arquivos
     DIR *pasta = opendir("/proc");
     if (pasta == NULL)
@@ -50,33 +65,20 @@ void acharFilhos(char pai[10], int rec)
                 fflush(stdout);
                 return;
             }
-            char buffer[50];
-            fgets(buffer, 50, arqv);
-
-            // fechar o arquivo, agora que arqc nao esta mais sendo usado
-            fclose(arqv);
 
             // printf("\nbuffer %s", buffer);
             // fflush(stdout);
+            FILE *arqv = fopen(caminho, "r");
+
+            char argumentos[4][50];
+            // o pai é o argumentos 3
+            fscanf(arqv, "%d (%[^)]) %c %d",
+                   argumentos[0],
+                   argumentos[1],
+                   argumentos[2],
+                   argumentos[3]);
 
             // tem q ser assim
-            char argumentos[50][50];
-            int ix = 0;
-
-            char *token = strtok(buffer, " ");
-
-            // while (token != NULL)
-            for (int i = 0; i < 4; i++)
-            {
-                // ele só faz ate o 3 argumento
-                strcpy(argumentos[ix], token);
-                ++ix;
-                token = strtok(NULL, " ");
-                // printf("\nargumento %d: %s", ix, argumentos[ix]);
-                // fflush(stdout);
-                // debug
-            }
-            // o pai é o argumentos 3
 
             if (strcmp(argumentos[3], pai) == 0)
             {
@@ -87,6 +89,9 @@ void acharFilhos(char pai[10], int rec)
 
                 // TODO existem nomes de arquivos com espaços
             }
+
+            // fechar o arquivo, agora que arqc nao esta mais sendo usado
+            fclose(arqv);
         }
     }
     // ABRIR UM ARQUIVO
