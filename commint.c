@@ -12,6 +12,85 @@
 #define MAX_LINHA 100
 #define MAX_COMANDOS 50
 
+void acharFilhos(char pai[10], int rec)
+{
+    // imprimir esse arquivo
+    printf("\n");
+    for (int i = 0; i < rec; i++)
+        printf("-");
+    printf("%s", pai);
+    // abrir a pasta onde estao os arquivos
+    DIR *pasta = opendir("/proc");
+    if (pasta == NULL)
+    {
+        printf("Error: Não foi possivel abrir a pasta.");
+    }
+    struct dirent *de;
+
+    // ABRIR UM ARQUIVO
+    while ((de = readdir(pasta)) != NULL)
+    {
+        // de = readdir(pasta);
+        // printf("\n arquivo '%s'", de->d_name);
+        // fflush(stdout);
+
+        // checa se o nome da pasta é um numero,e se nao é o proprio pai
+        if ((de->d_name[strspn(de->d_name, "0123456789")] == '\0') && strcmp(de->d_name, pai) != 0)
+        {
+
+            char caminho[50] = "/proc/";
+            strcat(caminho, de->d_name);
+            strcat(caminho, "/stat");
+
+            FILE *arqv = fopen(caminho, "r");
+
+            if (arqv == NULL)
+            { // Verify the file opened successfully
+                printf("\nErro, arquivo não encontrado.");
+                fflush(stdout);
+                return;
+            }
+            char buffer[50];
+            fgets(buffer, 50, arqv);
+            // pegar o pai do processo
+
+            // printf("\nbuffer %s", buffer);
+            // fflush(stdout);
+
+            // tem q ser assim
+            char argumentos[50][50];
+            int ix = 0;
+
+            char *token = strtok(buffer, " ");
+
+            // while (token != NULL)
+            for (int i = 0; i < 4; i++)
+            {
+                strcpy(argumentos[ix], token);
+                ++ix;
+                token = strtok(NULL, " ");
+                // printf("\nargumento %d: %s", ix, argumentos[ix]);
+                // fflush(stdout);
+                // debug
+            }
+            // o pai é o argumentos 3
+
+            if (strcmp(argumentos[3], pai) == 0)
+            {
+                //printf("\n checar %s",de->d_name);
+                // tal arquivo é filho desse
+                //chamar recursivamente para achar os filhos dele tbm
+                acharFilhos(de->d_name,rec + 1);
+
+                //TODO existem nomes de arquivos com espaços
+                //FIXME ele nao consegue ir alem de 2 camadas
+            }
+        }
+    }
+    // ABRIR UM ARQUIVO
+
+    // pega o pai dele
+}
 int main()
 {
     char linha[MAX_LINHA];
@@ -157,26 +236,23 @@ int main()
                     strcat(pastaAlvo, comandos[1]);
                     strcat(pastaAlvo, "/stat");
 
-                    //printf("\npasta %s",pastaAlvo);
+                    // printf("\npasta %s",pastaAlvo);
 
                     FILE *fptr = fopen(pastaAlvo, "r"); // Open in "r" (read) mode
                     char buffer[50];
 
                     if (fptr == NULL)
                     { // Verify the file opened successfully
-                        printf("\nError: Could not open file.");
+                        printf("\nErro, arquivo não encontrado.");
                         return 1;
                     }
 
                     // Read until fgets returns NULL (end of file)
-                    while (fgets(buffer, 50, fptr))
-                    {
-                        fgets(buffer, 50, fptr);
-                        printf("%s", buffer);
+                    fgets(buffer, 50, fptr);
+                    // printf("%s", buffer);
+                    acharFilhos(comandos[1],1);
 
-                        // TODO fazer o algoritmo de imprimir a tal arvore
-                    }
-                    //}
+                    // TODO fazer o algoritmo de imprimir a tal arvore
                 }
                 // EXECUTAR O COMANDO
             }
