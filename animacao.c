@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-// #define frame 0.25
+#define frame 0.25
 void esperar(float tempo)
 {
 
@@ -13,11 +13,9 @@ void esperar(float tempo)
     for (; (clock() - current_time) < (tempo * CLOCKS_PER_SEC);)
         ;
 }
-int main(int argc, char *argv[])
+int main()
 {
-    float frame = *argv[1];
-    for (int i = 0; i < *argv[2]; i++)
-
+    while (1)
     {
 
         printf("\n  ٩(◕‿◕｡)۶  ");
