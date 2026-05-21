@@ -18,23 +18,74 @@ int main()
     while (1)
     {
 
-        printf("\n           (\__/)             ");
-        printf("\n           (•ㅅ•)             ");
-        printf("\n           __||__             ");
-        printf("\n           |     |             ");
-        printf("\n           |     |             ");
-        printf("\n           \     /             ");
-        printf("\n            \   /             ");
-        printf("\n             \_/             ");
-        printf("\n            /   \           ");
-        printf("\n           /     \           ");
+        printf("\n           (|__/)             ");
+        printf("\n3O____     (•ㅅ•)             ");
+        printf("\n      |____ _||__ ____         ");
+        printf("\n           |     |    |____      ");
+        printf("\n           |     |         O3   ");
+        printf("\n           |     /             ");
+        printf("\n            |   /             ");
+        printf("\n             |_/             ");
+        printf("\n            /   |           ");
+        printf("\n           /     |           ");
         printf("\n           |      |         ");
         printf("\n           |     |          ");
         printf("\n         mM       Mm       ");
-        printf("\n                            ");
-        printf("\n                            ");
         esperar(frame);
         system("clear");
+
+
+        printf("\n           (|__/)             ");
+        printf("\n           (•ㅅ•)             ");
+        printf("\n3O________ __||__ _________O3   ");
+        printf("\n           |     |            ");
+        printf("\n           |     |            ");
+        printf("\n           |     /             ");
+        printf("\n            |   /             ");
+        printf("\n             |_/             ");
+        printf("\n            /   |           ");
+        printf("\n           /     |           ");
+        printf("\n           |      |         ");
+        printf("\n           |     |          ");
+        printf("\n         mM       Mm       ");
+        esperar(frame);
+        system("clear");
+
+
+        printf("\n           (|__/)             ");
+        printf("\n           (•ㅅ•)      ____O3  ");
+        printf("\n       ____ _||__ ____|           ");
+        printf("\n3O____|    |     |            ");
+        printf("\n           |     |            ");
+        printf("\n           |     /             ");
+        printf("\n            |   /             ");
+        printf("\n             |_/             ");
+        printf("\n            /   |           ");
+        printf("\n           /     |           ");
+        printf("\n           |      |         ");
+        printf("\n           |     |          ");
+        printf("\n         mM       Mm       ");
+        esperar(frame);
+        system("clear");
+
+
+        printf("\n           (|__/)             ");
+        printf("\n           (•ㅅ•)             ");
+        printf("\n3O________ _||__ _________O3   ");
+        printf("\n           |     |            ");
+        printf("\n           |     |            ");
+        printf("\n           |     /             ");
+        printf("\n            |   /             ");
+        printf("\n             |_/             ");
+        printf("\n            /   |           ");
+        printf("\n           /     |           ");
+        printf("\n           |      |         ");
+        printf("\n           |     |          ");
+        printf("\n         mM       Mm       ");
+        esperar(frame);
+        system("clear");
+
+
     }
     return 0;
 }
