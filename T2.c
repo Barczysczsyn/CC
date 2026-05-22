@@ -231,14 +231,19 @@ int main()
     long tam = ftell(arqv);   // Get current position
     fseek(arqv, 0, SEEK_SET); // volta pro comeco (VITAL)
 
-    int *numeros = malloc(tam / sizeof(int));
-    char *texto = malloc((tam / sizeof(int)) * 2);
+    int tamanho = tam / sizeof(int);
+
+    printf("\ntamanho %d", tamanho);
+    // int *numeros = malloc( * 2);
+    int numeros[100];
+    // char *texto = malloc((tam / sizeof(int)) * 4);
+    char texto[300];
     // fread(numeros, sizeof(int), 1, arqv);
 
-    fgets(texto, (tam / sizeof(int)), arqv);
+    fgets(texto, 300, arqv);
 
     printf("\ntexto %s", texto);
-    printf("\ntam %li", (tam / sizeof(int)));
+    printf("\ntam %li", tam);
 
     // strtok
 
@@ -262,7 +267,7 @@ int main()
     // FIXME teoricamente tá certo, mas da um erro desgraçado
     // free(texto);
 
-    for (int i = 0; i < sizeof(numeros); i++)
+    for (int i = 0; i < sizeof(numeros) / sizeof(int); i++)
     {
         printf("\nnumeros %d", numeros[i]);
         inserir(&L, numeros[i]);
