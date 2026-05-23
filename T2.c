@@ -136,8 +136,8 @@ void removerPares(struct s_no **pont)
             if ((p1->num % 2 == 0) && (p1->num != 2))
             {
 
-                printf("\nremovido %d", p1->num);
-                fflush(stdout);
+                //printf("\nremovido %d", p1->num);
+                //fflush(stdout);
                 //   teoricamente funciona
                 ant->prox = p1->prox;
 
@@ -181,8 +181,8 @@ void removerPrimos(struct s_no **pont)
             if (!primo(p1->num))
             {
 
-                printf("\nremovido %d", p1->num);
-                fflush(stdout);
+                //printf("\nremovido %d", p1->num);
+                //fflush(stdout);
                 //   teoricamente funciona
                 ant->prox = p1->prox;
 
@@ -224,6 +224,8 @@ int main()
     //*/
     // teste
 
+    //thread principal
+
     FILE *arqv = fopen("100.txt", "r");
 
     // mede o tamanho
@@ -231,19 +233,21 @@ int main()
     long tam = ftell(arqv);   // Get current position
     fseek(arqv, 0, SEEK_SET); // volta pro comeco (VITAL)
 
-    int tamanho = tam / sizeof(int);
+    //tamanho nem vai precisar
+    //int tamanho = tam / sizeof(int);
+    //printf("\ntamanho %d", tamanho);
 
-    printf("\ntamanho %d", tamanho);
-    // int *numeros = malloc( * 2);
-    int numeros[100];
-    // char *texto = malloc((tam / sizeof(int)) * 4);
-    char texto[300];
+
+    int *numeros = malloc(tam );
+    //int numeros[100];
+     char *texto = malloc(tam * 3);
+    //char texto[300];
     // fread(numeros, sizeof(int), 1, arqv);
 
-    fgets(texto, 300, arqv);
+    fgets(texto, (tam * 3), arqv);
 
-    printf("\ntexto %s", texto);
-    printf("\ntam %li", tam);
+    //printf("\ntexto %s", texto);
+    //printf("\ntam %li", tam);
 
     // strtok
 
@@ -267,15 +271,30 @@ int main()
     // FIXME teoricamente tá certo, mas da um erro desgraçado
     // free(texto);
 
-    for (int i = 0; i < sizeof(numeros) / sizeof(int); i++)
+    for (int i = 0; i < nms; i++)
     {
-        printf("\nnumeros %d", numeros[i]);
+        //printf("\nnumeros %d", numeros[i]);
         inserir(&L, numeros[i]);
     }
-    // TODO só coloca na lista até o 69
 
-    printaLista(L);
+    //thread principal
+
+    //printaLista(L);
     // 1 thread
+
+    //1 thread
+    removerPares(&L);
+    //printaLista(L);
+    //1 thread
+
+    //2 thread
+    removerPrimos(&L);
+    //printaLista(L);
+    //2 thread
+
+    //3 thread
+    printaLista(L);
+    //3 thread
 
     // aparentemente funciona até aqui
 
