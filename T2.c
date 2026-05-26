@@ -3,6 +3,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <sys/mman.h>
+#include <pthread.h>
 
 struct s_no
 {
@@ -35,14 +36,16 @@ int primo(int numero)
     }
     return 1;
 }
-void printaLista(struct s_no *no)
+static void *printaLista(void *args)
 {
-    if (no != NULL)
+    // TODO nao sei se funciona
+    struct s_no *pont = (struct s_no *)args;
+    if (pont != NULL)
     {
         printf("\n");
 
-        printf("%d -o-> ", no->num);
-        struct s_no *p1 = no->prox;
+        printf("%d -o-> ", pont->num);
+        struct s_no *p1 = pont->prox;
         while ((p1 != NULL))
         {
             printf("%d -o-> ", p1->num);
@@ -50,6 +53,8 @@ void printaLista(struct s_no *no)
         }
     }
     fflush(stdout);
+    // so pra ele nao reclamar
+    return args;
 }
 void inserir(struct s_no **pont, int num)
 {
@@ -113,19 +118,24 @@ void remover(struct s_no **pont, int num)
         }
     }
 }
-void removerPares(struct s_no **pont)
+static void *removerPares(void *args)
 {
+    // TODO nao sei se funciona
+    struct s_no **pont = (struct s_no **)args;
+
     if (*pont == NULL)
     {
 
-        return;
+    //so pra ele nao reclamar
+    return args;
     }
     else if (((*pont)->num % 2 == 0) && ((*pont)->num != 2))
     {
         struct s_no *temp = *pont;
         *pont = (*pont)->prox;
         free(temp);
-        return;
+    //so pra ele nao reclamar
+    return args;
     }
     else
     {
@@ -136,9 +146,9 @@ void removerPares(struct s_no **pont)
             if ((p1->num % 2 == 0) && (p1->num != 2))
             {
 
-                //printf("\nremovido %d", p1->num);
-                //fflush(stdout);
-                //   teoricamente funciona
+                // printf("\nremovido %d", p1->num);
+                // fflush(stdout);
+                //    teoricamente funciona
                 ant->prox = p1->prox;
 
                 struct s_no *temp = p1;
@@ -156,21 +166,28 @@ void removerPares(struct s_no **pont)
 
         // se o no for achado
     }
+    // so pra ele nao reclamar
+    return args;
 }
 
-void removerPrimos(struct s_no **pont)
+static void *removerPrimos(void *args)
 {
+    // TODO nao sei se funciona
+    struct s_no **pont = (struct s_no **)args;
+
     if (*pont == NULL)
     {
 
-        return;
+        // so pra ele nao reclamar
+        return args;
     }
     else if (!primo((*pont)->num))
     {
         struct s_no *temp = *pont;
         *pont = (*pont)->prox;
         free(temp);
-        return;
+        // so pra ele nao reclamar
+        return args;
     }
     else
     {
@@ -181,9 +198,9 @@ void removerPrimos(struct s_no **pont)
             if (!primo(p1->num))
             {
 
-                //printf("\nremovido %d", p1->num);
-                //fflush(stdout);
-                //   teoricamente funciona
+                // printf("\nremovido %d", p1->num);
+                // fflush(stdout);
+                //    teoricamente funciona
                 ant->prox = p1->prox;
 
                 struct s_no *temp = p1;
@@ -201,6 +218,8 @@ void removerPrimos(struct s_no **pont)
 
         // se o no for achado
     }
+    // so pra ele nao reclamar
+    return args;
 }
 
 int main()
@@ -224,7 +243,7 @@ int main()
     //*/
     // teste
 
-    //thread principal
+    // thread principal
 
     FILE *arqv = fopen("100.txt", "r");
 
@@ -233,21 +252,20 @@ int main()
     long tam = ftell(arqv);   // Get current position
     fseek(arqv, 0, SEEK_SET); // volta pro comeco (VITAL)
 
-    //tamanho nem vai precisar
-    //int tamanho = tam / sizeof(int);
-    //printf("\ntamanho %d", tamanho);
+    // tamanho nem vai precisar
+    // int tamanho = tam / sizeof(int);
+    // printf("\ntamanho %d", tamanho);
 
-
-    int *numeros = malloc(tam );
-    //int numeros[100];
-     char *texto = malloc(tam * 3);
-    //char texto[300];
-    // fread(numeros, sizeof(int), 1, arqv);
+    int *numeros = malloc(tam);
+    // int numeros[100];
+    char *texto = malloc(tam * 3);
+    // char texto[300];
+    //  fread(numeros, sizeof(int), 1, arqv);
 
     fgets(texto, (tam * 3), arqv);
 
-    //printf("\ntexto %s", texto);
-    //printf("\ntam %li", tam);
+    // printf("\ntexto %s", texto);
+    // printf("\ntam %li", tam);
 
     // strtok
 
@@ -273,28 +291,32 @@ int main()
 
     for (int i = 0; i < nms; i++)
     {
-        //printf("\nnumeros %d", numeros[i]);
+        // printf("\nnumeros %d", numeros[i]);
         inserir(&L, numeros[i]);
     }
 
-    //thread principal
+    // thread principal
 
-    //printaLista(L);
+    // printaLista(L);
+    //  1 thread
+
+    // 1 thread
+    // removerPares(&L);
+    pthread_t *thread_id[3];
+    pthread_create(thread_id[0], NULL, removerPares, &L);
+    // printaLista(L);
     // 1 thread
 
-    //1 thread
-    removerPares(&L);
-    //printaLista(L);
-    //1 thread
+    // 2 thread
+    // removerPrimos(&L);
+    pthread_create(thread_id[1], NULL, removerPrimos, &L);
+    // printaLista(L);
+    // 2 thread
 
-    //2 thread
-    removerPrimos(&L);
-    //printaLista(L);
-    //2 thread
-
-    //3 thread
-    printaLista(L);
-    //3 thread
+    // 3 thread
+    // printaLista(L);
+    pthread_create(thread_id[1], NULL, printaLista, L);
+    // 3 thread
 
     // aparentemente funciona até aqui
 
