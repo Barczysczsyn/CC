@@ -3,7 +3,6 @@
 #include <string.h>
 #include <fcntl.h>
 #include <sys/mman.h>
-#include <pthread.h>
 
 struct s_no
 {
@@ -36,16 +35,14 @@ int primo(int numero)
     }
     return 1;
 }
-static void *printaLista(void *args)
+void printaLista(struct s_no *no)
 {
-    // TODO nao sei se funciona
-    struct s_no *pont = (struct s_no *)args;
-    if (pont != NULL)
+    if (no != NULL)
     {
         printf("\n");
 
-        printf("%d -o-> ", pont->num);
-        struct s_no *p1 = pont->prox;
+        printf("%d -o-> ", no->num);
+        struct s_no *p1 = no->prox;
         while ((p1 != NULL))
         {
             printf("%d -o-> ", p1->num);
@@ -53,8 +50,6 @@ static void *printaLista(void *args)
         }
     }
     fflush(stdout);
-    // so pra ele nao reclamar
-    return args;
 }
 void inserir(struct s_no **pont, int num)
 {
@@ -118,16 +113,12 @@ void remover(struct s_no **pont, int num)
         }
     }
 }
-static void *removerPares(void *args)
+void removerPares(struct s_no **pont)
 {
-    // void *saida;
-    struct s_no **pont = (struct s_no **)args;
-
     if (*pont == NULL)
     {
 
-        // so pra ele nao reclamar
-        return args;
+        return;
     }
     else if (((*pont)->num % 2 == 0) && ((*pont)->num != 2))
     {
@@ -135,6 +126,7 @@ static void *removerPares(void *args)
         *pont = (*pont)->prox;
         free(temp);
     }
+
     struct s_no *ant = *pont, *p1 = (*pont)->prox;
     // achar o no
     while (p1 != NULL)
@@ -142,8 +134,8 @@ static void *removerPares(void *args)
         if ((p1->num % 2 == 0) && (p1->num != 2))
         {
 
-            // printf("\nremovido %d", p1->num);
-            // fflush(stdout);
+            printf("\nremovido %d", p1->num);
+            fflush(stdout);
             //    teoricamente funciona
             ant->prox = p1->prox;
 
@@ -153,27 +145,21 @@ static void *removerPares(void *args)
         }
         else
         {
+
             ant = p1;
             p1 = p1->prox;
         }
     }
 
     // se o no for achado
-
-    // so pra ele nao reclamar
-    return args;
 }
 
-static void *removerPrimos(void *args)
+void removerPrimos(struct s_no **pont)
 {
-    // TODO nao sei se funciona
-    struct s_no **pont = (struct s_no **)args;
-
     if (*pont == NULL)
     {
 
-        // so pra ele nao reclamar
-        return args;
+        return;
     }
     else if (!primo((*pont)->num))
     {
@@ -181,7 +167,6 @@ static void *removerPrimos(void *args)
         *pont = (*pont)->prox;
         free(temp);
     }
-
     struct s_no *ant = *pont, *p1 = (*pont)->prox;
     // achar o no
     while (p1 != NULL)
@@ -200,13 +185,13 @@ static void *removerPrimos(void *args)
         }
         else
         {
+
             ant = p1;
             p1 = p1->prox;
         }
     }
 
-    // so pra ele nao reclamar
-    return args;
+    // se o no for achado
 }
 
 int main()
@@ -214,8 +199,7 @@ int main()
     struct s_no *L = NULL;
     // L->prox = NULL;
 
-    /*
-    //teste
+    /* teste
     inserir(&L, 1);
     inserir(&L, 2);
     inserir(&L, 3);
@@ -279,35 +263,30 @@ int main()
 
     for (int i = 0; i < nms; i++)
     {
-        //printf("\nnumeros %d", numeros[i]);
+        // printf("\nnumeros %d", numeros[i]);
         inserir(&L, numeros[i]);
     }
 
     // thread principal
 
-    // printaLista(L);
-
-    // FIXME dá segfault aqui nas threads
+    printf("\nlista");
+    printaLista(L);
+    // 1 thread
 
     // 1 thread
-    // removerPares(&L);
-    pthread_t *thread_id[3] = {NULL, NULL, NULL};
-    pthread_create((&thread_id[0]), NULL, removerPares, &L);
-    pthread_join(thread_id[0], NULL);
-    //printaLista(L);
+    printf("\npares removidos");
+    removerPares(&L);
+    printaLista(L);
     // 1 thread
 
     // 2 thread
-    // removerPrimos(&L);
-    pthread_create((&thread_id[1]), NULL, removerPrimos, &L);
-    pthread_join(thread_id[1], NULL);
-    //printaLista(L);
+    printf("\nnao primos removidos");
+    removerPrimos(&L);
+    printaLista(L);
     // 2 thread
 
     // 3 thread
     // printaLista(L);
-    pthread_create((&thread_id[2]), NULL, printaLista, L);
-    pthread_join(thread_id[2], NULL);
     // 3 thread
 
     // aparentemente funciona até aqui
