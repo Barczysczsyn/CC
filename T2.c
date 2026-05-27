@@ -120,22 +120,22 @@ void remover(struct s_no **pont, int num)
 }
 static void *removerPares(void *args)
 {
-    // TODO nao sei se funciona
+    // void *saida;
     struct s_no **pont = (struct s_no **)args;
 
     if (*pont == NULL)
     {
 
-    //so pra ele nao reclamar
-    return args;
+        // so pra ele nao reclamar
+        return args;
     }
     else if (((*pont)->num % 2 == 0) && ((*pont)->num != 2))
     {
         struct s_no *temp = *pont;
         *pont = (*pont)->prox;
         free(temp);
-    //so pra ele nao reclamar
-    return args;
+        // so pra ele nao reclamar
+        return args;
     }
     else
     {
@@ -227,7 +227,8 @@ int main()
     struct s_no *L = NULL;
     // L->prox = NULL;
 
-    /* teste
+    /* 
+    //teste
     inserir(&L, 1);
     inserir(&L, 2);
     inserir(&L, 3);
@@ -291,31 +292,35 @@ int main()
 
     for (int i = 0; i < nms; i++)
     {
-        // printf("\nnumeros %d", numeros[i]);
+        printf("\nnumeros %d", numeros[i]);
         inserir(&L, numeros[i]);
     }
 
     // thread principal
 
     // printaLista(L);
-    //  1 thread
+
+    // FIXME dá segfault aqui nas threads
 
     // 1 thread
     // removerPares(&L);
-    pthread_t *thread_id[3];
-    pthread_create(thread_id[0], NULL, removerPares, &L);
-    // printaLista(L);
+    pthread_t *thread_id[3] = {NULL, NULL, NULL};
+    pthread_create((&thread_id[0]), NULL, removerPares, &L);
+    pthread_join(thread_id[0], NULL);
+    printaLista(L);
     // 1 thread
 
     // 2 thread
     // removerPrimos(&L);
-    pthread_create(thread_id[1], NULL, removerPrimos, &L);
-    // printaLista(L);
+    pthread_create((&thread_id[1]), NULL, removerPrimos, &L);
+    pthread_join(thread_id[1], NULL);
+    printaLista(L);
     // 2 thread
 
     // 3 thread
     // printaLista(L);
-    pthread_create(thread_id[1], NULL, printaLista, L);
+    pthread_create((&thread_id[2]), NULL, printaLista, L);
+    pthread_join(thread_id[2], NULL);
     // 3 thread
 
     // aparentemente funciona até aqui

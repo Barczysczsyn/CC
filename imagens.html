@@ -1,0 +1,48 @@
+<html></html>
+
+<script>
+      //vamo aprender um pouco de js kakakakakak
+
+  /*
+      array.forEach(element => {
+
+      });
+
+
+
+
+  */
+
+  const fs = require('fs');
+  const path = require('path');
+
+  const folderPath = './../../Pictures/Imagens/Saved Pictures'; // Path to your images folder
+
+  // Read the directory
+  fs.readdir(folderPath, (err, files) => {
+    if (err) return console.error('Unable to scan directory: ' + err);
+
+    // Filter for image files only
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.svg'];
+    const imageArray = files.filter(file =>
+      imageExtensions.includes(path.extname(file).toLowerCase())
+    );
+
+    console.log(imageArray); // Output: ['img1.jpg', 'img2.png', ...]
+
+    imageArray.sort((a, b) => a.lastModified - b.lastModified);
+
+
+
+      imageArray.forEach(element => {
+
+
+          const newImg = document.createElement("img");
+  newImg.src = element;
+  //newImg.classList.add("greeting");
+  document.body.appendChild(newImg);
+
+
+      });
+  });
+</script>
