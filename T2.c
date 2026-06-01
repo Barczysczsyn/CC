@@ -38,7 +38,6 @@ int primo(int numero)
 }
 static void *printaLista(void *args)
 {
-    // TODO nao sei se funciona
     struct s_no *pont = (struct s_no *)args;
     if (pont != NULL)
     {
@@ -72,7 +71,7 @@ void inserir(struct s_no **pont, int num)
     {
 
         // ir ate o final da lista
-        // aparentemente precisa de um auxiliar
+        // precisa de um auxiliar
         struct s_no *atual = *pont;
         while (atual->prox != NULL)
         {
@@ -211,6 +210,8 @@ static void *removerPrimos(void *args)
 
 int main()
 {
+    //TODO usar contadores
+    //TODO inserir com ponteiro pro ultimo
     struct s_no *L = NULL;
     // L->prox = NULL;
 
@@ -275,11 +276,11 @@ int main()
     // strtok
 
     // FIXME teoricamente tá certo, mas da um erro desgraçado
-    // free(texto);
+    //  free(texto);
 
     for (int i = 0; i < nms; i++)
     {
-        //printf("\nnumeros %d", numeros[i]);
+        // printf("\nnumeros %d", numeros[i]);
         inserir(&L, numeros[i]);
     }
 
@@ -294,15 +295,15 @@ int main()
     pthread_t *thread_id[3] = {NULL, NULL, NULL};
     pthread_create((&thread_id[0]), NULL, removerPares, &L);
     pthread_join(thread_id[0], NULL);
-    //printaLista(L);
-    // 1 thread
+    // printaLista(L);
+    //  1 thread
 
     // 2 thread
     // removerPrimos(&L);
     pthread_create((&thread_id[1]), NULL, removerPrimos, &L);
     pthread_join(thread_id[1], NULL);
-    //printaLista(L);
-    // 2 thread
+    // printaLista(L);
+    //  2 thread
 
     // 3 thread
     // printaLista(L);
@@ -316,6 +317,7 @@ int main()
     // causado pelo fclose de alguma forma???
     //
 
+    //free(texto);
     fclose(arqv);
     return 0;
 }
