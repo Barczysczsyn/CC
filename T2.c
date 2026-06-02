@@ -5,6 +5,8 @@
 #include <sys/mman.h>
 #include <pthread.h>
 
+// sim, eles vao ser variavel global
+int c1, c2, c3, c4;
 struct s_no
 {
     int num;
@@ -81,6 +83,18 @@ void inserir(struct s_no **pont, int num)
         atual->prox = novo;
     }
 }
+
+void inserirFinal(struct s_no **pontF, int num)
+{
+
+    struct s_no *novo = malloc(sizeof(struct s_no));
+    novo->num = num;
+    novo->prox = NULL;
+
+    (*pontF)->prox = novo;
+    (*pontF) = novo;
+}
+
 void remover(struct s_no **pont, int num)
 {
     if (*pont == NULL)
@@ -185,22 +199,27 @@ static void *removerPrimos(void *args)
     // achar o no
     while (p1 != NULL)
     {
-        if (!primo(p1->num))
+        // contadores
+        if (c3 < c2)
         {
+            if (!primo(p1->num))
+            {
 
-            // printf("\nremovido %d", p1->num);
-            // fflush(stdout);
-            //    teoricamente funciona
-            ant->prox = p1->prox;
+                // printf("\nremovido %d", p1->num);
+                // fflush(stdout);
+                //    teoricamente funciona
+                ant->prox = p1->prox;
 
-            struct s_no *temp = p1;
-            p1 = p1->prox;
-            free(temp);
-        }
-        else
-        {
-            ant = p1;
-            p1 = p1->prox;
+                struct s_no *temp = p1;
+                p1 = p1->prox;
+                free(temp);
+            }
+            else
+            {
+                ant = p1;
+                p1 = p1->prox;
+            }
+            ++c3;
         }
     }
 
@@ -210,9 +229,10 @@ static void *removerPrimos(void *args)
 
 int main()
 {
-    //TODO usar contadores
-    //TODO inserir com ponteiro pro ultimo
+    // TODO usar contadores
     struct s_no *L = NULL;
+    // TODO inserir com ponteiro pro ultimo
+    struct s_no *FL = NULL;
     // L->prox = NULL;
 
     /*
@@ -294,21 +314,18 @@ int main()
     // removerPares(&L);
     pthread_t *thread_id[3] = {NULL, NULL, NULL};
     pthread_create((&thread_id[0]), NULL, removerPares, &L);
-    pthread_join(thread_id[0], NULL);
     // printaLista(L);
     //  1 thread
 
     // 2 thread
     // removerPrimos(&L);
     pthread_create((&thread_id[1]), NULL, removerPrimos, &L);
-    pthread_join(thread_id[1], NULL);
     // printaLista(L);
     //  2 thread
 
     // 3 thread
     // printaLista(L);
     pthread_create((&thread_id[2]), NULL, printaLista, L);
-    pthread_join(thread_id[2], NULL);
     // 3 thread
 
     // aparentemente funciona até aqui
@@ -317,7 +334,10 @@ int main()
     // causado pelo fclose de alguma forma???
     //
 
-    //free(texto);
+    pthread_join(thread_id[0], NULL);
+    pthread_join(thread_id[1], NULL);
+    pthread_join(thread_id[2], NULL);
+    // free(texto);
     fclose(arqv);
     return 0;
 }
