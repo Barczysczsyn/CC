@@ -4,9 +4,10 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <pthread.h>
+#include <unistd.h>
 
 // sim, eles vao ser variavel global
-int c1, c2, c3, c4;
+int c1 = 1, c2 = 0, c3 = 0, c4 = 0;
 struct s_no
 {
     int num;
@@ -40,6 +41,13 @@ int primo(int numero)
 }
 static void *printaLista(void *args)
 {
+    //printf("\nlista");
+    //  contador
+    if (c4 >= c3 + 1)
+    {
+        // TODO 1 milissegundo é mto grande na real, deve ter outra forma
+        sleep(0.001);
+    }
     struct s_no *pont = (struct s_no *)args;
     if (pont != NULL)
     {
@@ -55,6 +63,7 @@ static void *printaLista(void *args)
     }
     fflush(stdout);
     // so pra ele nao reclamar
+    c4++;
     return args;
 }
 void inserir(struct s_no **pont, int num)
@@ -84,53 +93,31 @@ void inserir(struct s_no **pont, int num)
     }
 }
 
-void inserirFinal(struct s_no **pontF, int num)
+// insere tudo de uma só vez
+void inserirTotal(struct s_no **pont, int *num, int tam)
 {
-
+    // coloca o primeiro elemento na lista
     struct s_no *novo = malloc(sizeof(struct s_no));
-    novo->num = num;
+    novo->num = num[0];
     novo->prox = NULL;
+    (*pont) = novo;
 
-    (*pontF)->prox = novo;
-    (*pontF) = novo;
-}
-
-void remover(struct s_no **pont, int num)
-{
-    if (*pont == NULL)
+    struct s_no *atual = (*pont);
+    for (int i = 1; i < tam; i++)
     {
 
-        return;
-    }
-    else if ((*pont)->num == num)
-    {
-        struct s_no *temp = *pont;
-        *pont = (*pont)->prox;
-        free(temp);
-        return;
-    }
-    else
-    {
-        struct s_no *ant = *pont, *p1 = (*pont)->prox;
-        // achar o no
-        while ((p1 != NULL) && (p1->num != num))
-        {
-            ant = p1;
-            p1 = p1->prox;
-        }
+        struct s_no *novo = malloc(sizeof(struct s_no));
+        novo->num = num[i];
+        novo->prox = NULL;
 
-        // se o no for achado
-        if (p1->num == num)
-        {
+        atual->prox = novo;
 
-            // printf("\nremovido %d", p1->num);
-            // fflush(stdout);
-            //  teoricamente funciona
-            ant->prox = p1->prox;
-            free(p1);
-        }
+        // ir pra frente
+        atual = atual->prox;
+        c1++;
     }
 }
+
 static void *removerPares(void *args)
 {
     // void *saida;
@@ -152,6 +139,12 @@ static void *removerPares(void *args)
     // achar o no
     while (p1 != NULL)
     {
+        // contador
+        if (c2 >= c1 + 1)
+        {
+            // TODO 1 milissegundo é mto grande na real, deve ter outra forma
+            sleep(0.001);
+        }
         if ((p1->num % 2 == 0) && (p1->num != 2))
         {
 
@@ -169,6 +162,7 @@ static void *removerPares(void *args)
             ant = p1;
             p1 = p1->prox;
         }
+        c2++;
     }
 
     // se o no for achado
@@ -199,28 +193,30 @@ static void *removerPrimos(void *args)
     // achar o no
     while (p1 != NULL)
     {
-        // contadores
-        if (c3 < c2)
+        // contador
+        if (c3 >= c2 + 1)
         {
-            if (!primo(p1->num))
-            {
-
-                // printf("\nremovido %d", p1->num);
-                // fflush(stdout);
-                //    teoricamente funciona
-                ant->prox = p1->prox;
-
-                struct s_no *temp = p1;
-                p1 = p1->prox;
-                free(temp);
-            }
-            else
-            {
-                ant = p1;
-                p1 = p1->prox;
-            }
-            ++c3;
+            // TODO 1 milissegundo é mto grande na real, deve ter outra forma
+            sleep(0.001);
         }
+        if (!primo(p1->num))
+        {
+
+            // printf("\nremovido %d", p1->num);
+            // fflush(stdout);
+            //    teoricamente funciona
+            ant->prox = p1->prox;
+
+            struct s_no *temp = p1;
+            p1 = p1->prox;
+            free(temp);
+        }
+        else
+        {
+            ant = p1;
+            p1 = p1->prox;
+        }
+        ++c3;
     }
 
     // so pra ele nao reclamar
@@ -292,23 +288,17 @@ int main()
     // FIXME sera q precisa disso?
     numeros[nms] = '\0';
 
-    fflush(stdout);
-    // strtok
+    // fflush(stdout);
+    //  strtok
 
     // FIXME teoricamente tá certo, mas da um erro desgraçado
     //  free(texto);
 
-    for (int i = 0; i < nms; i++)
-    {
-        // printf("\nnumeros %d", numeros[i]);
-        inserir(&L, numeros[i]);
-    }
-
+    // thread principal
+    inserirTotal(&L, numeros, nms);
     // thread principal
 
-    // printaLista(L);
-
-    // FIXME dá segfault aqui nas threads
+    printaLista(L);
 
     // 1 thread
     // removerPares(&L);
