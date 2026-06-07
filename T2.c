@@ -53,11 +53,11 @@ static void *printaLista(void *args)
     {
         printf("\n");
 
-        printf("%d -o-> ", pont->num);
+        printf("%d ", pont->num);
         struct s_no *p1 = pont->prox;
         while ((p1 != NULL))
         {
-            printf("%d -o-> ", p1->num);
+            printf("%d ", p1->num);
             p1 = p1->prox;
         }
     }
@@ -263,6 +263,7 @@ int main()
 
     int *numeros = malloc(tam);
     // int numeros[100];
+    // *3 é uma aproximacao q costuma funcionar
     char *texto = malloc(tam * 3);
     // char texto[300];
     //  fread(numeros, sizeof(int), 1, arqv);
@@ -298,7 +299,7 @@ int main()
     inserirTotal(&L, numeros, nms);
     // thread principal
 
-    printaLista(L);
+    //printaLista(L);
 
     pthread_t *thread_id[3] = {NULL, NULL, NULL};
 
