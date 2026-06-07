@@ -41,8 +41,8 @@ int primo(int numero)
 }
 static void *printaLista(void *args)
 {
-    //printf("\nlista");
-    //  contador
+    // printf("\nlista");
+    //   contador
     if (c4 >= c3 + 1)
     {
         // TODO 1 milissegundo é mto grande na real, deve ter outra forma
@@ -300,19 +300,27 @@ int main()
 
     printaLista(L);
 
+    pthread_t *thread_id[3] = {NULL, NULL, NULL};
+
+    // TODO 1 milissegundo é mto grande na real, deve ter outra forma
+    sleep(0.001);
     // 1 thread
     // removerPares(&L);
-    pthread_t *thread_id[3] = {NULL, NULL, NULL};
+
     pthread_create((&thread_id[0]), NULL, removerPares, &L);
     // printaLista(L);
     //  1 thread
 
+    // TODO 1 milissegundo é mto grande na real, deve ter outra forma
+    sleep(0.001);
     // 2 thread
     // removerPrimos(&L);
     pthread_create((&thread_id[1]), NULL, removerPrimos, &L);
     // printaLista(L);
     //  2 thread
 
+    // TODO 1 milissegundo é mto grande na real, deve ter outra forma
+    sleep(0.001);
     // 3 thread
     // printaLista(L);
     pthread_create((&thread_id[2]), NULL, printaLista, L);
