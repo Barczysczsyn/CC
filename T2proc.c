@@ -6,14 +6,81 @@
 #include <pthread.h>
 #include <unistd.h>
 
-// variavel global
-int c1 = 1, c2 = 0, c3 = 0, c4 = 0;
-struct s_no
+#define MAX_NODES 1000000
+#define SHM_NAME "/lista"
+typedef struct
 {
-    int num;
-    struct s_no *prox;
-};
+    unsigned int value;
+    int next;
+    volatile int removed;
+} s_no;
+
+// volatile: obriga o processo a reler o valor da memoria a cada acesso.
+typedef struct
+{
+
+    // Contadores que coordenam a execucao dos processos
+    volatile int c1, c2, c3, c4;
+
+    volatile int done_reading;
+    volatile int done_par;
+    volatile int done_prime;
+
+    // Lista por offsets
+    int head_offset;
+    int tail_offset;
+    int next_free;
+
+    unsigned char bitmap[MAX_NODES]; // mapa de alocacao: 1 byte (1=alocado, 0=livre)
+    s_no nodes[MAX_NODES];
+} Shared;
 // #define s_no struct s_no
+
+Shared *map_shared(int create)
+{
+    // TODO mudar
+    int flags = create ? (O_CREAT | O_RDWR) : O_RDWR;
+    int fd = shm_open(SHM_NAME, flags, 0600);
+    if (fd == -1)
+    {
+        perror("shm_open");
+        exit(1);
+    }
+
+    if (create)
+    {
+        if (ftruncate(fd, sizeof(Shared)) == -1)
+        {
+            perror("ftruncate");
+            exit(1);
+        }
+    }
+
+    Shared *sh = (Shared *)mmap(0, sizeof(Shared),
+                                PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if (sh == MAP_FAILED)
+    {
+        perror("mmap");
+        exit(1);
+    }
+
+    close(fd);
+    return sh;
+}
+
+int alocar(Shared *sh)
+{
+    for (int i = sh->next_free; i < MAX_NODES; i++)
+    {
+        if (sh->bitmap[i] == 0)
+        {
+            sh->bitmap[i] = 1;
+            sh->next_free = i + 1;
+            return i;
+        }
+    }
+    return -1;
+}
 
 int primo(int numero)
 {
@@ -39,16 +106,15 @@ int primo(int numero)
     }
     return 1;
 }
-static void *printaLista(void *args)
+ void printaLista(struct s_no *pont)
 {
     // printf("\nlista");
     //   contador
-    while (c4 >= c3 + 1)
+    if (c4 >= c3 + 1)
     {
-        // assim ele vai esperar
-        ;
+        // TODO 1 milissegundo é mto grande na real, deve ter outra forma
+        sleep(0.001);
     }
-    struct s_no *pont = (struct s_no *)args;
     if (pont != NULL)
     {
         printf("\n");
@@ -66,7 +132,6 @@ static void *printaLista(void *args)
     c4++;
     return args;
 }
-
 // insere tudo de uma só vez
 void inserirTotal(struct s_no **pont, int *num, int tam)
 {
@@ -92,7 +157,7 @@ void inserirTotal(struct s_no **pont, int *num, int tam)
     }
 }
 
-static void *removerPares(void *args)
+ void removerPares(void *args)
 {
     // void *saida;
     struct s_no **pont = (struct s_no **)args;
@@ -113,10 +178,11 @@ static void *removerPares(void *args)
     // achar o no
     while (p1 != NULL)
     {
-        while (c2 >= c1 + 1)
+        // contador
+        if (c2 >= c1 + 1)
         {
-            // assim ele vai esperar
-            ;
+            // TODO 1 milissegundo é mto grande na real, deve ter outra forma
+            sleep(0.001);
         }
         if ((p1->num % 2 == 0) && (p1->num != 2))
         {
@@ -166,10 +232,11 @@ static void *removerPrimos(void *args)
     // achar o no
     while (p1 != NULL)
     {
-        while (c3 >= c2 + 1)
+        // contador
+        if (c3 >= c2 + 1)
         {
-            // assim ele vai esperar
-            ;
+            // TODO 1 milissegundo é mto grande na real, deve ter outra forma
+            sleep(0.001);
         }
         if (!primo(p1->num))
         {
@@ -203,6 +270,22 @@ int main()
     struct s_no *FL = NULL;
     // L->prox = NULL;
 
+    /*
+    //teste
+    inserir(&L, 1);
+    inserir(&L, 2);
+    inserir(&L, 3);
+    inserir(&L, 4);
+    inserir(&L, 5);
+    inserir(&L, 11);
+    printaLista(L);
+    removerPares(&L);
+    printaLista(L);
+    removerPrimos(&L);
+    printaLista(L);
+
+    //*/
+    // teste
 
     // thread principal
 
@@ -259,19 +342,24 @@ int main()
 
     pthread_t *thread_id[3] = {NULL, NULL, NULL};
 
+    // TODO 1 milissegundo é mto grande na real, deve ter outra forma
+    sleep(0.001);
     // 1 thread
     // removerPares(&L);
-
-    pthread_create((&thread_id[0]), NULL, removerPares, &L);
+    removerPares();
     // printaLista(L);
     //  1 thread
 
+    // TODO 1 milissegundo é mto grande na real, deve ter outra forma
+    sleep(0.001);
     // 2 thread
     // removerPrimos(&L);
     pthread_create((&thread_id[1]), NULL, removerPrimos, &L);
     // printaLista(L);
     //  2 thread
 
+    // TODO 1 milissegundo é mto grande na real, deve ter outra forma
+    sleep(0.001);
     // 3 thread
     // printaLista(L);
     pthread_create((&thread_id[2]), NULL, printaLista, L);
