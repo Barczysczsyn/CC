@@ -3,11 +3,14 @@
 .text
 
 
+#le um inteiro e o coloca em $s0
+#variavel n
 addi $v0,$zero,5
 syscall
 add $s0,$zero,$v0
 
 
+#s1 é aparentemente a cabeça da lista?
 lui $s1,0x1001
 ori $s1,$s1,0x0000
 
@@ -18,7 +21,7 @@ addi $s2,$zero,0
 FOR_READ:
 	slt $t0,$s2,$s0
 	beq $t0,$zero,FIM_FOR_READ
-	#leia c
+	#leia c e guarde em $s3
 	addi $v0,$zero,12
 	syscall
 	add $s3,$zero,$v0
