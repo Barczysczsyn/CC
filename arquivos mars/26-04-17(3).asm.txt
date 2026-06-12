@@ -1,0 +1,21 @@
+
+#int n			// n -> $s0
+#const int base = 2	// base -.> $s1
+addi $s1,$zero,2
+#leia n
+addi $v0,$zero,5
+syscall
+add $s0,$zero,$v0
+#do{
+DO:
+	div $s0,$s1
+# 	imprima n % base
+	mfhi $a0
+	addi,$v0,$zero,1
+	syscall
+# 	n = n/base
+	mflo $s0
+	bne $s0,$zero,DO
+#}
+#while(n!=0)
+

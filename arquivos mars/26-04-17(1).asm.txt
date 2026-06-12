@@ -1,0 +1,25 @@
+# 1- crie em mips um programa que leia 5 inteiros e imprima sua soma
+
+# int i, soma, // i-> $s0, soma -> $s1
+# for (i = 0, soma = 0; i < 5; i++)
+addi $s0, $zero, 0
+addi $s1, $zero, 0
+FOR_TEST:
+	slti $t0,$s0,5
+	beq $t0,$zero,FIM_FOR
+#	leia um inteiro e some com soma($s1)
+	addi $v0,$zero,5
+	syscall
+	add $s1,$s1,$v0
+	
+	addi $s0,$s0,1
+	j FOR_TEST
+FIM_FOR:
+#imprimir a soma
+addi $v0,$zero,1
+add $a0,$zero,$s1
+syscall
+
+
+
+

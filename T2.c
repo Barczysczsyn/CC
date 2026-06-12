@@ -247,7 +247,7 @@ int main()
 
     // fflush(stdout);
     //  strtok
-
+    //
     // FIXME teoricamente tá certo, mas da um erro desgraçado
     //  free(texto);
 
@@ -281,7 +281,7 @@ int main()
 
     // FIXME corrupted size vs. prev_size
     // causado pelo fclose de alguma forma???
-    //
+    //  
 
     pthread_join(thread_id[0], NULL);
     pthread_join(thread_id[1], NULL);

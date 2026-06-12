@@ -10,7 +10,7 @@ syscall
 add $s0,$zero,$v0
 
 
-#s1 é aparentemente a cabeça da lista?
+#s1 é aparentemente a cabeça da lista
 lui $s1,0x1001
 ori $s1,$s1,0x0000
 
@@ -46,12 +46,12 @@ FOR_READ:
 FIM_FOR_READ:
 
 #imprima a lista
-lui $s2,0x1001 #ptr=&no cabeça
-lw $s2,4($s2) #ptr=ptr->prox
+lui $s1,0x1001 #ptr=&no cabeça
+lw $s1,4($s1) #ptr=ptr->prox
 
 #for(ptr = endereco do no cabeca, ptr=ptr->prox ; ptr->prox != nuLl;ptr = ptr->prox)
 FOR_PRINT:
-	beq $s2,$zero,FIM_FOR_PRINT
+	beq $s1,$zero,FIM_FOR_PRINT
 	#imprima ptr->c
 	addi $v0,$zero,11
 	lb $a0,0($s1)

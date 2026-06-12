@@ -1,0 +1,31 @@
+.data
+	#0x10010000 é o começo
+	#SEMPRE COMEÇA A CONTAR DO ZERO!!!! AQUI EMBAIXO
+	.asciiz "Ola Mundo" # <- /0 tmb!!!! (asciiz)
+	# ^- 0x10010000
+	#.asciiz "Ola Mundo2" #.data + 10 (fim da anterior)
+	.align 2 #2 é para alinhar palavras
+	#^-0x1001009
+	.word 1,2,3,4 #0x1001000c
+	
+
+.text
+# la $reg, label <- pseudoinstrução, monte, veja como o lui
+# e o ori ficam e copie eles, remova pseudo instrução depois
+
+lui $a0,0x1001
+addi $v0,$zero,4
+syscall
+
+
+#lui $a0,0x1001 #<- zera a parte baixa
+#ori $a0,$a0,0x000a #<- representa o 10 que estamos somando
+#addi $v0,$zero,4
+#syscall
+
+#la $s0,W_ARRAY <- pseudo instrução (não pode)
+lui $s0,0x1001 
+ori $s0,$s0,0x000c #<- representa o 10 que estamos somando
+lw $a0,0($s0)
+addi $v0,$zero,1
+syscall
