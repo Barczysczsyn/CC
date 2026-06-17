@@ -1,13 +1,15 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
+#define MAX_CPU 50
 #define MAX_PROC 50
 #define MAX_ARQV 100
 struct Processo
 {
-    int prioridade, sub;
-    int cpu[MAX_PROC];
-    int es[MAX_PROC];
+    int prioridade, submissao;
+    int cpu[MAX_CPU];
+    int es[MAX_CPU];
 };
 //
 
@@ -36,19 +38,51 @@ int main(int argc, char **argv)
         }
     }
     char texto[MAX_ARQV];
+    char textoProc[MAX_PROC][MAX_PROC];
+    // onde os processos serão guardados
+    struct Processo processos[MAX_PROC];
 
     // Codigo do strtok
-    //TODO imagina q tenha q colocar um strtok dentro do outro, um para processos com \n e outro pra cada argumento do processo com ' '
     fgets(texto, MAX_ARQV, arqv);
-    char *token = strtok(texto, " \t");
+    char *proc = strtok(texto, "\n");
 
-    int args = 0;
-    while (token != NULL)
+    int numProc = 0, numArgs = 0, numCpu = 0, numEs = 0;
+
+    while (proc != NULL)
     {
-        // ver se funciona ne
-        numeros[args] = atoi(token);
-        ++args;
-        token = strtok(NULL, " \t");
+        strcpy(textoProc[numProc],proc);
+        ++numProc;
+        proc = strtok(NULL, "\n");
+    }
+
+    //TODO ver se funciona
+
+    for (int i = 0; i < numProc; i++)
+    {
+        char *args = strtok(textoProc[i], "\n");
+        // pega a prioridade
+        processos[i].prioridade = atoi(args);
+        //++numProc;
+        args = strtok(NULL, " ");
+
+        // pega o momento de submissao
+        processos[i].submissao = atoi(args);
+        //++numProc;
+        args = strtok(NULL, " ");
+
+        while (args != NULL)
+        {
+
+            // pega a cpu
+            processos[i].cpu[numCpu] = atoi(args);
+            ++numCpu;
+            args = strtok(NULL, " ");
+
+            // pega o E/S
+            processos[i].es[numEs] = atoi(args);
+            ++numEs;
+            args = strtok(NULL, " ");
+        }
     }
 
     // Codigo do strtok

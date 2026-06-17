@@ -1,4 +1,3 @@
-
 #ler n
 addi $v0,$zero,5
 syscall
@@ -6,8 +5,12 @@ syscall
 #s0 e n
 add $s0,$zero,$v0
 
-#aloca n bits
-add $a0,$zero,$s0
+
+#$s4 é simplesmente 4
+addi $s4, $zero,4
+mul $a0, $s0,$s4
+#aloca n*4 bits
+addi $v0,$zero,9
 syscall
 
 #s1 é V
@@ -30,10 +33,13 @@ FOR_V:
 	syscall
 	
 	#coloca o int no v[4*k]
-	sb $v0,4($t4)
+	sw $v0,0($t4)
 	
 	#k++
 	addi $t1,$t1,1
+	
+	#v[i++]
+	addi $t4,$t4,4
 
 
 	j FOR_V
@@ -71,21 +77,24 @@ FOR_EXTERNO:
 		#IF
 		
 		#t5 e v{i]
-		lb $t5,4($s2)
+		lw $t5,0($s2)
 		
 		
 		#t6 é V[i+1]
-		addi $t7,$s2,1
-		lb $t6,4($t7)
+		#t7 é &V[i+1]
+		addi $t7,$s2,4
+		lw $t6,0($t7)
 		
 		#FIXME ele tambem vai trocar se for igual, oq é desnecessario
 		slt $t0,$t5,$t6
 		beq $t0,$zero,FIM_IF
 		
-		#entrou no if
-		add $t8,$t5,$zero
-		sw $t6,4($s2)
-		sw $t8,4($t7)
+			#entrou no if
+		
+			#t8 é aux
+			add $t8,$t5,$zero
+			sw $t6,0($s2)
+			sw $t8,0($t7)
 		
 		FIM_IF:
 		
@@ -93,8 +102,8 @@ FOR_EXTERNO:
 		addi $t3,$t3,1
 		
 		#V[i]++
-		#TODO 1 ou 4?
-		addi $s2,$s2,1
+		#TODO 1 ou 4
+		addi $s2,$s2,4
 		j FOR_INTERNO
 	FIM_FOR_INTERNO:
 	
@@ -103,3 +112,25 @@ FOR_EXTERNO:
 	
 	j FOR_EXTERNO
 FIM_FOR_EXTERNO:
+
+
+#$t1 é i
+add $t1,$zero,$zero
+
+FOR_PRINT:
+	slt $t0,$t1,$s0
+	
+	beq $t0,$zero,FIM_FOR_PRINT
+	#imprima ptr->c
+	lw $a0,0($s1)
+	addi $v0,$zero,1
+	syscall
+	#sw $s1,4($s1)
+	addi $s1,$s1,4
+	
+	#i++
+	addi $t1,$t1,1
+	j FOR_PRINT
+	
+FIM_FOR_PRINT:
+
