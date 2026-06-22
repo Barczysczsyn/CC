@@ -14,7 +14,7 @@ struct Processo
 //
 
 int instante = 0;
-int main(int argc, char **argv)
+int main(int argc, char *argv[])
 {
 
     char entrada[50];
@@ -22,13 +22,13 @@ int main(int argc, char **argv)
     int quantum, seq = 0;
 
     strcpy(entrada, argv[1]);
-    quantum = argv[2];
+    quantum = atoi(argv[2]);
 
     FILE *arqv = fopen(entrada, "r");
 
-    if (argc > 2)
+    if (argc > 3)
     {
-        if (strcmp(argv[3], "-seq"))
+        if (strcmp(argv[3], "-seq") == 0)
         {
             seq = 1;
         }
@@ -50,12 +50,17 @@ int main(int argc, char **argv)
 
     while (proc != NULL)
     {
-        strcpy(textoProc[numProc],proc);
+        strcpy(textoProc[numProc], proc);
         ++numProc;
         proc = strtok(NULL, "\n");
+        printf("\n%s", textoProc[numProc-1]);
     }
 
-    //TODO ver se funciona
+    printf("\nnumproc %d", numProc);
+
+    fflush(stdout);
+
+    // TODO ver se funciona
 
     for (int i = 0; i < numProc; i++)
     {
@@ -86,6 +91,12 @@ int main(int argc, char **argv)
     }
 
     // Codigo do strtok
+
+    for (int i = 0; i < numProc; i++)
+    {
+        printf("\nprocesso %i", i);
+        printf("\n %i %i %i %i", processos[i].prioridade, processos[i].submissao, processos[i].cpu[0], processos[i].es[0]);
+    }
 
     strcat(entrada, ".out");
     FILE *saida = fopen(entrada, "w");
