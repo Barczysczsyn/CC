@@ -149,6 +149,7 @@ int main(int argc, char *argv[])
         //++numProc;
         args = strtok(NULL, " ");
 
+            numCpu = 0, numEs = 0;
         while (args != NULL)
         {
 
@@ -158,27 +159,31 @@ int main(int argc, char *argv[])
             args = strtok(NULL, " ");
 
             // pega o E/S
-            processos[i].es[numEs] = atoi(args);
-            ++numEs;
-            args = strtok(NULL, " ");
-            // BUG aqui atras
-            printf("cehgou");
-            fflush(stdout);
+            // so um cheque a mais
+            if (args != NULL)
+            {
+                processos[i].es[numEs] = atoi(args);
+                ++numEs;
+                args = strtok(NULL, " ");
+            }
         }
+        printf("\ncheegou");
+        fflush(stdout);
     }
 
     // Codigo do strtok
 
     for (int i = 0; i < numProc; i++)
     {
-        printf("\nprocesso %i", i);
-        printf("\n %i %i %i %i", processos[i].prioridade, processos[i].submissao, processos[i].cpu[0], processos[i].es[0]);
+        printf("\nprocesso %d", i);
+        printf("\n %d %d %d %d %d", processos[i].prioridade, processos[i].submissao, processos[i].cpu[0], processos[i].es[0],processos[i].cpu[1]);
+        fflush(stdout);
     }
 
     strcat(entrada, ".out");
     FILE *saida = fopen(entrada, "w");
 
     fclose(arqv);
-
+    fclose(saida);
     return 0;
 }
