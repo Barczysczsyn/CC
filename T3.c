@@ -14,8 +14,53 @@ struct Processo
 //
 
 int instante = 0;
+
+void FCFS(struct Processo *processos, int procCont)
+{
+    // assim nao vamos precisar sobrescrever nada no processos original
+    struct Processo *proximos = processos;
+    for (int k = 0; k < procCont; k++)
+    {
+        int j = 0;
+        for (int i = 0; i < procCont; i++)
+        {
+
+            // escolhe o processo submetido mais cedo
+            if (proximos[i].submissao < proximos[j].submissao)
+            {
+                // ve se o processo ja nao foi executado
+                // fiz em dois ifs pra ficar mais facil de entender
+                if ((proximos[i].cpu[0] == 0) && (proximos[j].es[0] == 0))
+                    j = i;
+            }
+        }
+
+        //"executa" o processo
+        // tira ele da lista de proximos
+        int i = 0;
+        while (proximos[j].cpu[i] != 0)
+        {
+            instante += proximos[j].cpu[i];
+            proximos[j].cpu[i] = 0;
+            i++;
+        }
+        i = 0;
+        while (proximos[j].es[i] != 0)
+        {
+            instante += proximos[j].es[i];
+            proximos[j].es[i] = 0;
+            i++;
+        }
+    }
+}
+
 int main(int argc, char *argv[])
 {
+    if (argc < 3)
+    {
+        printf("\nquantidade de argumentos inválida");
+        return 0;
+    }
 
     char entrada[50];
 
@@ -24,7 +69,13 @@ int main(int argc, char *argv[])
     strcpy(entrada, argv[1]);
     quantum = atoi(argv[2]);
 
-    FILE *arqv = fopen(entrada, "r");
+    FILE *arqv = fopen(entrada, "r+");
+
+    if (arqv == NULL)
+    {
+        printf("\nArquivo não encontrado ou corrompido.");
+        return 0;
+    }
 
     if (argc > 3)
     {
@@ -35,15 +86,38 @@ int main(int argc, char *argv[])
         else
         {
             printf("\nArgumento desconhecido");
+            // return 0;
         }
     }
-    char texto[MAX_ARQV];
+    // char texto[MAX_ARQV];
     char textoProc[MAX_PROC][MAX_PROC];
     // onde os processos serão guardados
     struct Processo processos[MAX_PROC];
 
+    //*
+    // como precisamos ler o \n, tera q ser feito desse jeito
+    fseek(arqv, 0, SEEK_END);
+    long file_size = ftell(arqv);
+    rewind(arqv); // volta o ponteiro pro comeco
+
+    // ia burra corrigiu o proprio codigo
+    char *texto = malloc(file_size + 1);
+    if (texto == NULL)
+    {
+        perror("\nerro no malloc");
+        fclose(arqv);
+        return 0;
+    }
+
+    size_t bytes_read = fread(texto, 1, file_size, arqv);
+    texto[bytes_read] = '\0';
+    //*/
+    // fgets(texto, MAX_ARQV, arqv);
+    // fread(texto,sizeof(arqv)*4,1,arqv);
+
     // Codigo do strtok
-    fgets(texto, MAX_ARQV, arqv);
+
+    printf("\ntexto %s ", texto);
     char *proc = strtok(texto, "\n");
 
     int numProc = 0, numArgs = 0, numCpu = 0, numEs = 0;
@@ -51,9 +125,9 @@ int main(int argc, char *argv[])
     while (proc != NULL)
     {
         strcpy(textoProc[numProc], proc);
+        printf("\n%s", textoProc[numProc]);
         ++numProc;
         proc = strtok(NULL, "\n");
-        printf("\n%s", textoProc[numProc-1]);
     }
 
     printf("\nnumproc %d", numProc);
@@ -64,7 +138,7 @@ int main(int argc, char *argv[])
 
     for (int i = 0; i < numProc; i++)
     {
-        char *args = strtok(textoProc[i], "\n");
+        char *args = strtok(textoProc[i], " ");
         // pega a prioridade
         processos[i].prioridade = atoi(args);
         //++numProc;
@@ -87,6 +161,9 @@ int main(int argc, char *argv[])
             processos[i].es[numEs] = atoi(args);
             ++numEs;
             args = strtok(NULL, " ");
+            // BUG aqui atras
+            printf("cehgou");
+            fflush(stdout);
         }
     }
 
