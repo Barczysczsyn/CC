@@ -75,31 +75,51 @@ void funcao_filhos(int num_filhos)
     // TODO resposta do servidor
 
     char nome[MAX_NOME], senha[MAX_SENHA];
-    printf("\nInsira seu Nome: ");
-    scanf("%s", nome);
 
-    printf("\nInsira sua senha: ");
-    scanf("%s", senha);
-
-    send(sock, nome, strlen(nome), 0);
-    send(sock, senha, strlen(senha), 0);
     // autenticacao
-    int aut;
+    char *aut;
+    do
+    {
+
+        printf("\nInsira seu Nome: ");
+        scanf("%s", nome);
+        printf("\nInsira sua senha: ");
+        scanf("%s", senha);
+        send(sock, nome, strlen(nome), 0);
+        send(sock, senha, strlen(senha), 0);
+        recv(sock, aut, 1, 0);
+        if (aut != '1')
+        {
+
+            printf("\nNome ou senha incorretos");
+        }
+    } while (aut != '1');
 
     // retorna 1 se deu certo ou 0 para erro
-    recv(sock, aut, 1, 0);
 
     int resposta;
 
     // quando tudo estiver acabado
-    while (resposta != 4)
+    while (resposta != 0)
     {
-        scanf("%d",resposta);
+        printf("\n1 - Adicionar paciente \n2 - Ver fila\n3 - Heartbeat\n0 - Sair\n");
+        scanf("%d", resposta);
 
         switch (resposta)
         {
         case 1:
-            /* code */
+            int id;
+            char nome[MAX_NOME];
+            printf("\nID:");
+            scanf("%d", &id);
+            printf("\nNome:");
+            scanf("%s", nome);
+
+            // envia pro servidor pra ele preparar
+            // FIXME sizeof?
+            send(sock, resposta, sizeof(int), 0);
+            send(sock, id, sizeof(int), 0);
+            send(sock, nome, strlen(nome), 0);
             break;
 
         default:

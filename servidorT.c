@@ -1,6 +1,8 @@
 // servidor usando multiplexacao
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/ioctl.h> //funcoes de entrada e saida de alto nivel
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -8,6 +10,7 @@
 #include <unistd.h>
 
 #define true 1
+#define MAX_NOME 25
 int main(int argc, char **argv)
 {
 
@@ -16,6 +19,7 @@ int main(int argc, char **argv)
 
     struct sockaddr_in servidor;
     // file descriptor set
+    // BUG o vscode dá erro, mas o codigo funciona
     fd_set readset, testeset;
     int listensock;
     int novosocket;
@@ -23,7 +27,7 @@ int main(int argc, char **argv)
     int resposta, nlidos, x, val;
 
     FILE *arqv;
-    arqv = fopen("banco_de_dados","rw");
+    arqv = fopen("banco_de_dados", "rw");
 
     // ouvir chamadas de conexao dos clientes
     listensock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -84,6 +88,9 @@ int main(int argc, char **argv)
             return 0;
         }
 
+        char nome[25] = "joao";
+        char senha[25] = "123";
+        // x é o manipulador
         for (x = 0; x < __FD_SETSIZE; ++x)
         {
             if (FD_ISSET(x, &testeset))
@@ -97,6 +104,7 @@ int main(int argc, char **argv)
                 }
                 else
                 {
+                    // TODO ele recebe 1 ngc antes de tudo
                     nlidos = recv(x, buffer, 25, 0);
                     if (nlidos <= 0)
                     {
@@ -106,10 +114,60 @@ int main(int argc, char **argv)
                     }
                     else
                     {
+
+                        // para cada cliente conectado
+                        printf("\nNovo cliente conectado");
                         buffer[nlidos] = '\0';
-                        printf("\n%s", buffer);
-                        send(x, buffer, nlidos, 0);
-                        printf(" x = %d",x);
+                        // printf("\n%s", buffer);
+                        // fflush(stdout);
+                        // send(x, buffer, nlidos, 0);
+                        // printf(" x = %d", x);
+
+                        char sen[MAX_NOME], nom[MAX_NOME];
+                        //  autenticacao
+                        // nome
+                        do
+                        {
+                            nlidos = recv(x, nom, 25, 0);
+                            nom[nlidos] = '\0';
+
+                            nlidos = recv(x, nom, 25, 0);
+                            sen[nlidos] = '\0';
+                            if ((strcmp(nom, nome) != 0) || (strcmp(sen, senha) != 0))
+                            {
+                                // eu pensei em fazer ele só enviar flags de um numero, mas nao sei se o send funciona assim
+
+                                // nao encontrado
+                                char *msg;
+                                *msg = '0';
+                                send(x, msg, 1, 0);
+                            }
+                            else
+                            {
+                                // encontrado
+                                char *msg;
+                                *msg = '1';
+                                send(x, msg, 1, 0);
+                            }
+
+                        } while ((strcmp(nom, nome) != 0) || (strcmp(sen, senha) != 0));
+                        // autenticacao
+                        // senha
+
+                        // tela principal
+                        while (true)
+                        {
+                            nlidos = recv(x, buffer, 1, 0);
+                            switch (atoi(buffer))
+                            {
+                            case 1:
+                                /* code */
+                                break;
+
+                            default:
+                                break;
+                            }
+                        }
                     }
                 }
             }

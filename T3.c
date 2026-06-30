@@ -54,6 +54,45 @@ void FCFS(struct Processo *processos, int procCont)
     }
 }
 
+
+//TODO perguntar ao professor se pode colocar uma flag de processo ja executado, e outras coisas na struct processo
+void RR(struct Processo *processos, int procCont)
+{
+    // assim nao vamos precisar sobrescrever nada no processos original
+    struct Processo *proximos = processos;
+    for (int k = 0; k < procCont; k++)
+    {
+        int j = 0;
+        for (int i = 0; i < procCont; i++)
+        {
+
+            // escolhe o processo submetido mais cedo
+            if (proximos[i].submissao < proximos[j].submissao)
+            {
+                // ve se o processo ja nao foi executado
+                if ((proximos[i].cpu[0] == 0) && (proximos[j].es[0] == 0))
+                    j = i;
+            }
+        }
+
+        //"executa" o processo
+        // tira ele da lista de proximos
+        int i = 0;
+        while (proximos[j].cpu[i] != 0)
+        {
+            instante += proximos[j].cpu[i];
+            proximos[j].cpu[i] = 0;
+            i++;
+        }
+        i = 0;
+        while (proximos[j].es[i] != 0)
+        {
+            instante += proximos[j].es[i];
+            proximos[j].es[i] = 0;
+            i++;
+        }
+    }
+}
 int main(int argc, char *argv[])
 {
     if (argc < 3)
@@ -134,7 +173,6 @@ int main(int argc, char *argv[])
 
     fflush(stdout);
 
-    // TODO ver se funciona
 
     for (int i = 0; i < numProc; i++)
     {
@@ -149,7 +187,7 @@ int main(int argc, char *argv[])
         //++numProc;
         args = strtok(NULL, " ");
 
-            numCpu = 0, numEs = 0;
+        numCpu = 0, numEs = 0;
         while (args != NULL)
         {
 
@@ -176,7 +214,7 @@ int main(int argc, char *argv[])
     for (int i = 0; i < numProc; i++)
     {
         printf("\nprocesso %d", i);
-        printf("\n %d %d %d %d %d", processos[i].prioridade, processos[i].submissao, processos[i].cpu[0], processos[i].es[0],processos[i].cpu[1]);
+        printf("\n %d %d %d %d %d", processos[i].prioridade, processos[i].submissao, processos[i].cpu[0], processos[i].es[0], processos[i].cpu[1]);
         fflush(stdout);
     }
 
