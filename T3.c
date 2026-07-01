@@ -54,42 +54,60 @@ void FCFS(struct Processo *processos, int procCont)
     }
 }
 
-
-//TODO perguntar ao professor se pode colocar uma flag de processo ja executado, e outras coisas na struct processo
-void RR(struct Processo *processos, int procCont)
+// TODO perguntar ao professor se pode colocar uma flag de processo ja executado, e outras coisas na struct processo
+void RR(struct Processo *processos, int procCont, int quantum)
 {
+    // par significa cpu
+    // impar significa es
+    int marcador[MAX_PROC];
+
+    //talvez nao precisava, mas vai ficar bem mais facil
+    //serve pra diferenciar se vai ser es ou cpu
+    int qual[MAX_PROC];
     // assim nao vamos precisar sobrescrever nada no processos original
     struct Processo *proximos = processos;
-    for (int k = 0; k < procCont; k++)
+    // bubble sort para ordenar o vetor de proximos
+    int flag;
+    do
     {
-        int j = 0;
-        for (int i = 0; i < procCont; i++)
+        flag = 0;
+        for (int i = 1; i < procCont; i++)
         {
 
-            // escolhe o processo submetido mais cedo
-            if (proximos[i].submissao < proximos[j].submissao)
+            if (proximos[i - 1].submissao > proximos[i].submissao)
             {
-                // ve se o processo ja nao foi executado
-                if ((proximos[i].cpu[0] == 0) && (proximos[j].es[0] == 0))
-                    j = i;
+                struct Processo aux = proximos[i - 1];
+                proximos[i - 1] = proximos[i];
+                proximos[i] = aux;
+                flag = 1;
             }
         }
+    } while (flag);
 
-        //"executa" o processo
-        // tira ele da lista de proximos
-        int i = 0;
-        while (proximos[j].cpu[i] != 0)
+    // bubble sort para ordenar o vetor de proximos
+
+    int j = 0;
+    while ()
+    {
+        if (marcador[j] % 2 == 0)
         {
-            instante += proximos[j].cpu[i];
-            proximos[j].cpu[i] = 0;
-            i++;
+            if (proximos[j].cpu[marcador[j]] > quantum)
+            {
+                instante += quantum;
+                proximos[j].es[marcador[j]] -= quantum;
+                j++;
+            }
+            else
+            {
+
+                instante += proximos[j].es[marcador[j]];
+                proximos[j].es[i] = 0;
+                j++;
+            }
         }
-        i = 0;
-        while (proximos[j].es[i] != 0)
+        else
         {
-            instante += proximos[j].es[i];
-            proximos[j].es[i] = 0;
-            i++;
+            // es
         }
     }
 }
@@ -172,7 +190,6 @@ int main(int argc, char *argv[])
     printf("\nnumproc %d", numProc);
 
     fflush(stdout);
-
 
     for (int i = 0; i < numProc; i++)
     {
