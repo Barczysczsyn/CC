@@ -66,20 +66,45 @@ void removerListaIni(struct s_no **inicio)
     free(temp);
 }
 
+//[ ] o x nao devia ser por referencia tambem?
+void removerListaPont(struct s_no **inicio, struct s_no *x)
+{
+    // retira o elemento comparando os ponteiros, deve ser um mau habito
+    struct s_no *p1 = *inicio, *p2;
+    while (p1->proc != x && p1->prox != NULL)
+    {
+        p2 = p1;
+        p1 = p1->prox;
+    }
+
+    if (p1->proc == x)
+    {
+        struct s_no *temp = p1;
+        //costura o resto
+        p1 = p1->prox;
+        p2->prox = p1;
+        //remove o no
+        free(temp);
+    }else{
+        perror("remocao do no");
+    }
+}
+
 //[x] o vetor de proximos tem que ser uma lista encadeada preferencialmente
 //[x] tem que ver o uso de CPU tambem:
 // uso de CPU = tempo de execucao - tempo ocioso
 //[x] nao precisa de fila de ES
 // ES e CPU são executados separadamente
 
-struct Processo *procurarSub(struct s_no *inicio)
+struct Processo *procurarSJF(struct s_no *inicio)
 {
     struct Processo *menor;
     menor = inicio->proc;
     //[ ] nao vai mudar a referencia pro primeiro como aquele outro codigo?
     while (inicio != NULL)
     {
-        if (menor > inicio->proc)
+        // ve qual tem o menor pico de cpu
+        if (menor > inicio->proc->cpu[inicio->proc->marcador])
         {
             menor = inicio->proc;
         }
@@ -89,7 +114,7 @@ struct Processo *procurarSub(struct s_no *inicio)
     return &menor;
 }
 
-// TODO -seq no FCFS
+// TODO -seq no FCFS nao serve pra nada
 void FCFS(struct Processo *processos, int procCont, int seq)
 {
     // honestamente, instante local faz mais sentido da forma como estou fazendo
@@ -98,7 +123,7 @@ void FCFS(struct Processo *processos, int procCont, int seq)
     // assim nao vamos precisar sobrescrever nada no processos original
     struct Processo *proximos = processos;
     // cria inicio da lista de prontos
-    struct s_no *prontos;
+    struct s_no *prontos = NULL;
 
     //[ ] EU ACHO que o ES não vai mais precisar
     //[ ] na verdade nao entendi direito o papel do es nesse programa
@@ -145,14 +170,13 @@ void FCFS(struct Processo *processos, int procCont, int seq)
                 // pula pro proximo pico de cpu
                 executando->marcador++;
                 // se o proximo pico tambem for zero
-                // FIXME e se for um valor de lixo
+                // FIXME e se for um valor de lixo?
                 if (executando->cpu[executando->marcador] == 0)
                 {
-                    //o processo já foi encerrado
+                    // o processo já foi encerrado
                     exec++;
-                    //marca com -1 pra ele não executar de novo
+                    // marca com -1 pra ele não executar de novo
                     executando->submissao = -1;
-
                 }
                 else
                 {
@@ -160,9 +184,92 @@ void FCFS(struct Processo *processos, int procCont, int seq)
                     // [ ] sera que dá bom fazer assim? instante de submissao modificado
                     // ele so fica pronto de novo quando acabar a execucao da ES dele
                     executando->submissao = instante + executando->es[(executando->marcador) - 1];
+                    // obviamente, isso só faz sentido se o executando conseguir mudar os proximos por referencia
                 }
                 // [ ] remover o processo da lista de prontos?
                 removerListaIni(&prontos);
+                // vai ver qual é o proximo a executar
+                executando = NULL;
+            }
+        }
+        ++instante;
+    }
+}
+
+// TODO -seq no FCFS nao serve pra nada
+void SJF(struct Processo *processos, int procCont, int seq)
+{
+    // honestamente, instante local faz mais sentido da forma como estou fazendo
+    int instante = 0;
+    int ocioso = 0;
+    // assim nao vamos precisar sobrescrever nada no processos original
+    struct Processo *proximos = processos;
+    // cria inicio da lista de prontos
+    struct s_no *prontos = NULL;
+
+    //[ ] EU ACHO que o ES não vai mais precisar
+    //[ ] na verdade nao entendi direito o papel do es nesse programa
+
+    // salva qual processo esta executando
+    struct Processo *executando = NULL;
+
+    int exec = 0;
+    while (exec < procCont)
+    {
+        for (int i = 0; i < procCont; i++)
+        {
+            // procura se um processo ficou pronto agora
+            if (proximos[i].submissao == instante)
+            {
+                // coloca na fila de prontos
+                inserirLista(prontos, proximos[i]);
+            }
+        }
+
+        // nao esta executando nada
+        // nao tem preempção
+        if (executando == NULL)
+        {
+            // pega o processo com menor pico de CPU
+            executando = procurarSJF(prontos);
+
+            if (executando == NULL)
+            {
+                // se nao tem nenhum processo pronto, o programa fica ocioso
+                // TODO talvez colocar esse if la no final?
+                //[ ] executar ES tambem conta como cpu?
+                ++ocioso;
+            }
+        }
+        else
+        {
+            // executa o pico de cpu
+            executando->cpu[executando->marcador]--;
+
+            // ve se já terminou
+            if (executando->cpu[executando->marcador] == 0)
+            {
+                // pula pro proximo pico de cpu
+                executando->marcador++;
+                // se o proximo pico tambem for zero
+                // FIXME e se for um valor de lixo?
+                if (executando->cpu[executando->marcador] == 0)
+                {
+                    // o processo já foi encerrado
+                    exec++;
+                    // marca com -1 pra ele não executar de novo
+                    executando->submissao = -1;
+                }
+                else
+                {
+                    // ainda tem um proximo pico
+                    // [ ] sera que dá bom fazer assim? instante de submissao modificado
+                    // ele so fica pronto de novo quando acabar a execucao da ES dele
+                    executando->submissao = instante + executando->es[(executando->marcador) - 1];
+                    // obviamente, isso só faz sentido se o executando conseguir mudar os proximos por referencia
+                }
+                // [ ] remover o processo da lista de prontos?
+                removerListaPont(&prontos,executando);
                 // vai ver qual é o proximo a executar
                 executando = NULL;
             }
