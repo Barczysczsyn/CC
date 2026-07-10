@@ -10,9 +10,21 @@ struct Processo
     int prioridade, submissao;
     int cpu[MAX_CPU];
     int es[MAX_CPU];
+    int marcador;
 };
-//
 
+//lista encadeada
+struct s_no{
+    struct Processo *ptr;
+    struct s_no *prox;
+};
+//typedef struct s_no No;
+
+//[x] o vetor de proximos tem que ser uma lista encadeada preferencialmente
+//[x] tem que ver o uso de CPU tambem:
+//uso de CPU = tempo de execucao - tempo ocioso
+//[x] nao precisa de fila de ES
+//ES e CPU são executados separadamente
 int instante = 0;
 
 void FCFS(struct Processo *processos, int procCont)
@@ -30,7 +42,8 @@ void FCFS(struct Processo *processos, int procCont)
             {
                 // ve se o processo ja nao foi executado
                 // fiz em dois ifs pra ficar mais facil de entender
-                if ((proximos[i].cpu[0] == 0) && (proximos[j].es[0] == 0))
+                // estava em ==, mas era pra ser != né?
+                if ((proximos[i].cpu[0] != 0) && (proximos[j].es[0] != 0))
                     j = i;
             }
         }
@@ -55,14 +68,15 @@ void FCFS(struct Processo *processos, int procCont)
 }
 
 // TODO perguntar ao professor se pode colocar uma flag de processo ja executado, e outras coisas na struct processo
+// FIXME pode, deve na verdade
 void RR(struct Processo *processos, int procCont, int quantum)
 {
     // par significa cpu
     // impar significa es
-    int marcador[MAX_PROC];
+    int marcador[MAX_PROC][2];
 
-    //talvez nao precisava, mas vai ficar bem mais facil
-    //serve pra diferenciar se vai ser es ou cpu
+    // talvez nao precisava, mas vai ficar bem mais facil
+    // serve pra diferenciar se vai ser es ou cpu
     int qual[MAX_PROC];
     // assim nao vamos precisar sobrescrever nada no processos original
     struct Processo *proximos = processos;
@@ -87,28 +101,42 @@ void RR(struct Processo *processos, int procCont, int quantum)
     // bubble sort para ordenar o vetor de proximos
 
     int j = 0;
-    while ()
+    //TODO condição
+    while (j < procCont)
     {
-        if (marcador[j] % 2 == 0)
+        if (marcador[j][0] >= marcador[j][1])
         {
-            if (proximos[j].cpu[marcador[j]] > quantum)
+            if (proximos[j].cpu[marcador[j][0]] > quantum)
             {
                 instante += quantum;
-                proximos[j].es[marcador[j]] -= quantum;
-                j++;
+                proximos[j].cpu[marcador[j][0]] -= quantum;
+                marcador[j][0]++;
             }
             else
             {
 
-                instante += proximos[j].es[marcador[j]];
-                proximos[j].es[i] = 0;
-                j++;
+                instante += proximos[j].es[marcador[j][0]];
+                proximos[j].cpu[marcador[j][0]] = 0;
+                marcador[j][0]++;
             }
         }
         else
         {
-            // es
+            if (proximos[j].cpu[marcador[j][1]] > quantum)
+            {
+                instante += quantum;
+                proximos[j].cpu[marcador[j][1]] -= quantum;
+                marcador[j][1]++;
+            }
+            else
+            {
+
+                instante += proximos[j].es[marcador[j][1]];
+                proximos[j].cpu[marcador[j][1]] = 0;
+                marcador[j][1]++;
+            }
         }
+        j++;
     }
 }
 int main(int argc, char *argv[])
