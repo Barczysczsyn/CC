@@ -112,6 +112,7 @@ void FCFS(struct Processo *processos, int procCont, int seq)
         }
 
         // nao esta executando nada
+        //nao tem preempção
         if (executando == NULL)
         {
             //[ ] acho q o if está certo
@@ -131,6 +132,7 @@ void FCFS(struct Processo *processos, int procCont, int seq)
         }
         else
         {
+            //executa o pico de cpu
             executando->cpu[executando->marcador]--;
 
             // ve se já terminou
@@ -138,6 +140,8 @@ void FCFS(struct Processo *processos, int procCont, int seq)
             {
                 // pula pro proximo pico de cpu
                 executando->marcador++;
+                //se o proximo pico tambem for zero
+                //FIXME e se for um valor de lixo
                 if (executando->cpu[executando->marcador] == 0)
                 {
                     // o processo já encerrou a execucao
