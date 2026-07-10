@@ -5,6 +5,8 @@
 #define MAX_CPU 50
 #define MAX_PROC 50
 #define MAX_ARQV 100
+#define true 1
+#define false 0
 struct Processo
 {
     int prioridade, submissao;
@@ -13,62 +15,132 @@ struct Processo
     int marcador;
 };
 
-//lista encadeada
-struct s_no{
-    struct Processo *ptr;
+// lista encadeada
+struct s_no
+{
+    struct Processo *proc;
     struct s_no *prox;
 };
-//typedef struct s_no No;
+// typedef struct s_no No;
+
+void inserirLista(struct s_no *inicio, struct Processo processo)
+{
+    // vai ate o ultimo no
+    //[ ] nao vai mudar a referencia pro primeiro como aquele outro codigo?
+    while (inicio->prox != NULL)
+    {
+        inicio = inicio->prox;
+    }
+
+    struct s_no *novo = malloc(sizeof(struct s_no));
+    // o negocio do endereco é duvidoso
+    //[ ] testar
+    novo->proc = &processo;
+    novo->prox = NULL;
+    inicio->prox = novo;
+}
+
+void removerLista(struct s_no **inicio)
+{
+    //TODO tratar se for o primeiro e tal
+    struct s_no *p1 = *inicio, *p2;
+    while(p1->prox != NULL && p1->proc->marcador != -1){
+        p2 = p1;
+        p1 = p1->prox;
+    }
+    if(p1->proc->marcador == -1){
+        //costura o que sobrou
+        p2->prox = p1->prox;
+        //[ ] testar
+        free(p1);
+    }
+}
 
 //[x] o vetor de proximos tem que ser uma lista encadeada preferencialmente
 //[x] tem que ver o uso de CPU tambem:
-//uso de CPU = tempo de execucao - tempo ocioso
+// uso de CPU = tempo de execucao - tempo ocioso
 //[x] nao precisa de fila de ES
-//ES e CPU são executados separadamente
+// ES e CPU são executados separadamente
 int instante = 0;
+
+struct Processo *procurarSub(struct s_no *inicio)
+{
+    struct Processo *menor;
+    menor = inicio->proc;
+    //[ ] nao vai mudar a referencia pro primeiro como aquele outro codigo?
+    while (inicio != NULL)
+    {
+        if (menor > inicio->proc)
+        {
+            menor = inicio->proc;
+        }
+        inicio = inicio->prox;
+    }
+    //[ ] acho que é assim
+    return &menor;
+}
 
 void FCFS(struct Processo *processos, int procCont)
 {
     // assim nao vamos precisar sobrescrever nada no processos original
     struct Processo *proximos = processos;
-    for (int k = 0; k < procCont; k++)
+    // cria inicio da lista de prontos
+    struct s_no *prontos;
+
+    // salva qual processo esta executando
+    struct Processo *executando = NULL;
+
+    while (true)
     {
-        int j = 0;
         for (int i = 0; i < procCont; i++)
         {
-
-            // escolhe o processo submetido mais cedo
-            if (proximos[i].submissao < proximos[j].submissao)
+            // procura se um processo ficou pronto agora
+            if (proximos[i].submissao == instante)
             {
-                // ve se o processo ja nao foi executado
-                // fiz em dois ifs pra ficar mais facil de entender
-                // estava em ==, mas era pra ser != né?
-                if ((proximos[i].cpu[0] != 0) && (proximos[j].es[0] != 0))
-                    j = i;
+                // coloca na fila de prontos
+                inserirLista(prontos, proximos[i]);
+            }
+
+            // nao esta executando nada
+            if (executando == NULL)
+            {
+                // procura na fila o processo com menor tempo de submissao
+                executando = procurarSub(prontos);
+            }
+            else
+            {
+                executando->cpu[executando->marcador]--;
+
+                // ve se já terminou
+                if (executando->cpu[executando->marcador] == 0)
+                {
+                    // pula pro proximo pico de cpu
+                    executando->marcador++;
+                    if (executando->cpu[executando->marcador] == 0)
+                    {
+                        // o processo já encerrou a execucao
+                        executando->marcador = -1;
+                        // TODO remover o processo da lista de prontos?
+                        removerLista(&prontos);
+                        executando = NULL;
+                    }
+                    else
+                    {
+                        // ainda tem um proximo pico
+                        //[ ] sera que dá bom fazer assim? instante de submissao modificado
+                        executando->submissao = instante + executando->cpu[executando->marcador];
+                        // vai ver qual é o proximo a executar
+                        executando = NULL;
+                    }
+                }
             }
         }
 
-        //"executa" o processo
-        // tira ele da lista de proximos
-        int i = 0;
-        while (proximos[j].cpu[i] != 0)
-        {
-            instante += proximos[j].cpu[i];
-            proximos[j].cpu[i] = 0;
-            i++;
-        }
-        i = 0;
-        while (proximos[j].es[i] != 0)
-        {
-            instante += proximos[j].es[i];
-            proximos[j].es[i] = 0;
-            i++;
-        }
+        ++instante;
     }
 }
 
-// TODO perguntar ao professor se pode colocar uma flag de processo ja executado, e outras coisas na struct processo
-// FIXME pode, deve na verdade
+// [x] pode colocar uma flag de processo ja executado, e outras coisas na struct processo
 void RR(struct Processo *processos, int procCont, int quantum)
 {
     // par significa cpu
@@ -101,7 +173,7 @@ void RR(struct Processo *processos, int procCont, int quantum)
     // bubble sort para ordenar o vetor de proximos
 
     int j = 0;
-    //TODO condição
+    // TODO condição
     while (j < procCont)
     {
         if (marcador[j][0] >= marcador[j][1])
