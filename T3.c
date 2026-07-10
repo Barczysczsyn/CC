@@ -40,7 +40,7 @@ void inserirLista(struct s_no *inicio, struct Processo processo)
     inicio->prox = novo;
 }
 
-void removerLista(struct s_no **inicio)
+void removerMarca(struct s_no **inicio)
 {
     // TODO tratar se for o primeiro e tal
     struct s_no *p1 = *inicio, *p2;
@@ -58,12 +58,19 @@ void removerLista(struct s_no **inicio)
     }
 }
 
+void removerListaIni(struct s_no **inicio)
+{
+    // retira o primeiro elemento da lista
+    struct s_no *temp = *inicio;
+    *inicio = (*inicio)->prox;
+    free(temp);
+}
+
 //[x] o vetor de proximos tem que ser uma lista encadeada preferencialmente
 //[x] tem que ver o uso de CPU tambem:
 // uso de CPU = tempo de execucao - tempo ocioso
 //[x] nao precisa de fila de ES
 // ES e CPU são executados separadamente
-int instante = 0;
 
 struct Processo *procurarSub(struct s_no *inicio)
 {
@@ -85,16 +92,16 @@ struct Processo *procurarSub(struct s_no *inicio)
 // TODO -seq no FCFS
 void FCFS(struct Processo *processos, int procCont, int seq)
 {
+    // honestamente, instante local faz mais sentido da forma como estou fazendo
+    int instante = 0;
     int ocioso = 0;
     // assim nao vamos precisar sobrescrever nada no processos original
     struct Processo *proximos = processos;
     // cria inicio da lista de prontos
     struct s_no *prontos;
 
-    // pra contar o tempo de es se for -seq
-    // if{
-    struct Processo *ES = NULL;
-    //]
+    //[ ] EU ACHO que o ES não vai mais precisar
+    //[ ] na verdade nao entendi direito o papel do es nesse programa
 
     // salva qual processo esta executando
     struct Processo *executando = NULL;
@@ -112,27 +119,23 @@ void FCFS(struct Processo *processos, int procCont, int seq)
         }
 
         // nao esta executando nada
-        //nao tem preempção
+        // nao tem preempção
         if (executando == NULL)
         {
-            //[ ] acho q o if está certo
-            if (!seq || ES != executando)
-            {
-                // procura na fila o processo com menor tempo de submissao
-                executando = procurarSub(prontos);
-            }
+            // pega o processo com menor tempo de submissao, que obviamente é o primeiro da fila
+            executando = prontos;
 
             if (executando == NULL)
             {
                 // se nao tem nenhum processo pronto, o programa fica ocioso
                 // TODO talvez colocar esse if la no final?
-                //[ ] ES tambem conta como cpu?
+                //[ ] executar ES tambem conta como cpu?
                 ++ocioso;
             }
         }
         else
         {
-            //executa o pico de cpu
+            // executa o pico de cpu
             executando->cpu[executando->marcador]--;
 
             // ve se já terminou
@@ -140,115 +143,25 @@ void FCFS(struct Processo *processos, int procCont, int seq)
             {
                 // pula pro proximo pico de cpu
                 executando->marcador++;
-                //se o proximo pico tambem for zero
-                //FIXME e se for um valor de lixo
-                if (executando->cpu[executando->marcador] == 0)
-                {
-                    // o processo já encerrou a execucao
-                    executando->marcador = -1;
-                    // [ ] remover o processo da lista de prontos?
-                    removerLista(&prontos);
-                    executando = NULL;
-                }
-                else
+                // se o proximo pico tambem for zero
+                // FIXME e se for um valor de lixo
+                if (executando->cpu[executando->marcador] != 0)
                 {
                     // ainda tem um proximo pico
                     // [ ] sera que dá bom fazer assim? instante de submissao modificado
-                    // ele so fica pronto de novo quando acabar a execucao da ES
+                    // ele so fica pronto de novo quando acabar a execucao da ES dele
                     executando->submissao = instante + executando->es[(executando->marcador) - 1];
-
-                    // ele coloca o processo no ES
-                    //  e pra executar a cpu ele precisa checar se o es que está executando nao é o dele
-                    if (seq)
-                    {
-                        ES = executando;
-                    }
-                    // vai ver qual é o proximo a executar
-                    executando = NULL;
                 }
+                // [ ] remover o processo da lista de prontos?
+                removerListaIni(&prontos);
+                // vai ver qual é o proximo a executar
+                executando = NULL;
             }
-        }
-        if (ES != NULL)
-        {
-            // se tem algo no es executa ele
-            // -1 pq ele avanca no if acima
-            ES->es[ES->marcador - 1]--;
         }
         ++instante;
     }
 }
 
-// [x] pode colocar uma flag de processo ja executado, e outras coisas na struct processo
-void RR(struct Processo *processos, int procCont, int quantum)
-{
-    // par significa cpu
-    // impar significa es
-    int marcador[MAX_PROC][2];
-
-    // talvez nao precisava, mas vai ficar bem mais facil
-    // serve pra diferenciar se vai ser es ou cpu
-    int qual[MAX_PROC];
-    // assim nao vamos precisar sobrescrever nada no processos original
-    struct Processo *proximos = processos;
-    // bubble sort para ordenar o vetor de proximos
-    int flag;
-    do
-    {
-        flag = 0;
-        for (int i = 1; i < procCont; i++)
-        {
-
-            if (proximos[i - 1].submissao > proximos[i].submissao)
-            {
-                struct Processo aux = proximos[i - 1];
-                proximos[i - 1] = proximos[i];
-                proximos[i] = aux;
-                flag = 1;
-            }
-        }
-    } while (flag);
-
-    // bubble sort para ordenar o vetor de proximos
-
-    int j = 0;
-    // TODO condição
-    while (j < procCont)
-    {
-        if (marcador[j][0] >= marcador[j][1])
-        {
-            if (proximos[j].cpu[marcador[j][0]] > quantum)
-            {
-                instante += quantum;
-                proximos[j].cpu[marcador[j][0]] -= quantum;
-                marcador[j][0]++;
-            }
-            else
-            {
-
-                instante += proximos[j].es[marcador[j][0]];
-                proximos[j].cpu[marcador[j][0]] = 0;
-                marcador[j][0]++;
-            }
-        }
-        else
-        {
-            if (proximos[j].cpu[marcador[j][1]] > quantum)
-            {
-                instante += quantum;
-                proximos[j].cpu[marcador[j][1]] -= quantum;
-                marcador[j][1]++;
-            }
-            else
-            {
-
-                instante += proximos[j].es[marcador[j][1]];
-                proximos[j].cpu[marcador[j][1]] = 0;
-                marcador[j][1]++;
-            }
-        }
-        j++;
-    }
-}
 int main(int argc, char *argv[])
 {
     if (argc < 3)
