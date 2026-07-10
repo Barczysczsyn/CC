@@ -106,7 +106,8 @@ void FCFS(struct Processo *processos, int procCont, int seq)
     // salva qual processo esta executando
     struct Processo *executando = NULL;
 
-    while (true)
+    int exec = 0;
+    while (exec < procCont)
     {
         for (int i = 0; i < procCont; i++)
         {
@@ -145,7 +146,15 @@ void FCFS(struct Processo *processos, int procCont, int seq)
                 executando->marcador++;
                 // se o proximo pico tambem for zero
                 // FIXME e se for um valor de lixo
-                if (executando->cpu[executando->marcador] != 0)
+                if (executando->cpu[executando->marcador] == 0)
+                {
+                    //o processo já foi encerrado
+                    exec++;
+                    //marca com -1 pra ele não executar de novo
+                    executando->submissao = -1;
+
+                }
+                else
                 {
                     // ainda tem um proximo pico
                     // [ ] sera que dá bom fazer assim? instante de submissao modificado
