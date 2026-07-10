@@ -42,14 +42,16 @@ void inserirLista(struct s_no *inicio, struct Processo processo)
 
 void removerLista(struct s_no **inicio)
 {
-    //TODO tratar se for o primeiro e tal
+    // TODO tratar se for o primeiro e tal
     struct s_no *p1 = *inicio, *p2;
-    while(p1->prox != NULL && p1->proc->marcador != -1){
+    while (p1->prox != NULL && p1->proc->marcador != -1)
+    {
         p2 = p1;
         p1 = p1->prox;
     }
-    if(p1->proc->marcador == -1){
-        //costura o que sobrou
+    if (p1->proc->marcador == -1)
+    {
+        // costura o que sobrou
         p2->prox = p1->prox;
         //[ ] testar
         free(p1);
@@ -80,12 +82,19 @@ struct Processo *procurarSub(struct s_no *inicio)
     return &menor;
 }
 
-void FCFS(struct Processo *processos, int procCont)
+// TODO -seq no FCFS
+void FCFS(struct Processo *processos, int procCont, int seq)
 {
+    int ocioso = 0;
     // assim nao vamos precisar sobrescrever nada no processos original
     struct Processo *proximos = processos;
     // cria inicio da lista de prontos
     struct s_no *prontos;
+
+    // pra contar o tempo de es se for -seq
+    // if{
+    struct Processo *ES = NULL;
+    //]
 
     // salva qual processo esta executando
     struct Processo *executando = NULL;
@@ -100,42 +109,67 @@ void FCFS(struct Processo *processos, int procCont)
                 // coloca na fila de prontos
                 inserirLista(prontos, proximos[i]);
             }
+        }
 
-            // nao esta executando nada
-            if (executando == NULL)
+        // nao esta executando nada
+        if (executando == NULL)
+        {
+            //[ ] acho q o if está certo
+            if (!seq || ES != executando)
             {
                 // procura na fila o processo com menor tempo de submissao
                 executando = procurarSub(prontos);
             }
-            else
-            {
-                executando->cpu[executando->marcador]--;
 
-                // ve se já terminou
+            if (executando == NULL)
+            {
+                // se nao tem nenhum processo pronto, o programa fica ocioso
+                // TODO talvez colocar esse if la no final?
+                //[ ] ES tambem conta como cpu?
+                ++ocioso;
+            }
+        }
+        else
+        {
+            executando->cpu[executando->marcador]--;
+
+            // ve se já terminou
+            if (executando->cpu[executando->marcador] == 0)
+            {
+                // pula pro proximo pico de cpu
+                executando->marcador++;
                 if (executando->cpu[executando->marcador] == 0)
                 {
-                    // pula pro proximo pico de cpu
-                    executando->marcador++;
-                    if (executando->cpu[executando->marcador] == 0)
+                    // o processo já encerrou a execucao
+                    executando->marcador = -1;
+                    // [ ] remover o processo da lista de prontos?
+                    removerLista(&prontos);
+                    executando = NULL;
+                }
+                else
+                {
+                    // ainda tem um proximo pico
+                    // [ ] sera que dá bom fazer assim? instante de submissao modificado
+                    // ele so fica pronto de novo quando acabar a execucao da ES
+                    executando->submissao = instante + executando->es[(executando->marcador) - 1];
+
+                    // ele coloca o processo no ES
+                    //  e pra executar a cpu ele precisa checar se o es que está executando nao é o dele
+                    if (seq)
                     {
-                        // o processo já encerrou a execucao
-                        executando->marcador = -1;
-                        // TODO remover o processo da lista de prontos?
-                        removerLista(&prontos);
-                        executando = NULL;
+                        ES = executando;
                     }
-                    else
-                    {
-                        // ainda tem um proximo pico
-                        //[ ] sera que dá bom fazer assim? instante de submissao modificado
-                        executando->submissao = instante + executando->cpu[executando->marcador];
-                        // vai ver qual é o proximo a executar
-                        executando = NULL;
-                    }
+                    // vai ver qual é o proximo a executar
+                    executando = NULL;
                 }
             }
         }
-
+        if (ES != NULL)
+        {
+            // se tem algo no es executa ele
+            // -1 pq ele avanca no if acima
+            ES->es[ES->marcador - 1]--;
+        }
         ++instante;
     }
 }
