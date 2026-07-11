@@ -67,7 +67,7 @@ void removerListaIni(struct s_no **inicio)
 }
 
 //[ ] o x nao devia ser por referencia tambem?
-void removerListaPont(struct s_no **inicio, struct s_no *x)
+void removerListaPont(struct s_no **inicio, struct Processo *x)
 {
     // retira o elemento comparando os ponteiros, deve ser um mau habito
     struct s_no *p1 = *inicio, *p2;
@@ -106,14 +106,14 @@ struct Processo *procurarSJF(struct s_no *inicio)
     while (inicio != NULL)
     {
         // ve qual tem o menor pico de cpu
-        if (menor > inicio->proc->cpu[inicio->proc->marcador])
+        if (menor->cpu[menor->marcador] > inicio->proc->cpu[inicio->proc->marcador])
         {
             menor = inicio->proc;
         }
         inicio = inicio->prox;
     }
-    //[ ] acho que é assim
-    return &menor;
+    //[ ] retorna variável local?
+    return menor;
 }
 struct Processo *procurarPrioridade(struct s_no *inicio)
 {
@@ -123,11 +123,11 @@ struct Processo *procurarPrioridade(struct s_no *inicio)
     while (inicio != NULL)
     {
         // ve qual tem o menor pico de cpu
-        if (menor > inicio->proc->prioridade)
+        if (menor->prioridade > inicio->proc->prioridade)
         {
             menor = inicio->proc;
         }
-        else if (menor == inicio->proc->prioridade)
+        else if (menor->prioridade == inicio->proc->prioridade)
         {
             // se forem iguais entao é FCFS
             if (menor->submissao > inicio->proc->submissao)
@@ -137,8 +137,8 @@ struct Processo *procurarPrioridade(struct s_no *inicio)
         }
         inicio = inicio->prox;
     }
-    //[ ] acho que é assim
-    return &menor;
+    //[ ] retorna variável local?
+    return menor;
 }
 
 // TODO -seq no FCFS nao serve pra nada
@@ -176,7 +176,7 @@ void FCFS(struct Processo *processos, int procCont, int seq)
         if (executando == NULL)
         {
             // pega o processo com menor tempo de submissao, que obviamente é o primeiro da fila
-            executando = prontos;
+            executando = prontos->proc;
 
             if (executando == NULL)
             {
@@ -511,7 +511,7 @@ void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
             if(atual == NULL){
                 atual = prontos;
             }
-            executando = atual;
+            executando = atual->proc;
 
             if (executando == NULL)
             {
