@@ -80,12 +80,14 @@ void removerListaPont(struct s_no **inicio, struct s_no *x)
     if (p1->proc == x)
     {
         struct s_no *temp = p1;
-        //costura o resto
+        // costura o resto
         p1 = p1->prox;
         p2->prox = p1;
-        //remove o no
+        // remove o no
         free(temp);
-    }else{
+    }
+    else
+    {
         perror("remocao do no");
     }
 }
@@ -107,6 +109,31 @@ struct Processo *procurarSJF(struct s_no *inicio)
         if (menor > inicio->proc->cpu[inicio->proc->marcador])
         {
             menor = inicio->proc;
+        }
+        inicio = inicio->prox;
+    }
+    //[ ] acho que é assim
+    return &menor;
+}
+struct Processo *procurarPrioridade(struct s_no *inicio)
+{
+    struct Processo *menor;
+    menor = inicio->proc;
+    //[ ] nao vai mudar a referencia pro primeiro como aquele outro codigo?
+    while (inicio != NULL)
+    {
+        // ve qual tem o menor pico de cpu
+        if (menor > inicio->proc->prioridade)
+        {
+            menor = inicio->proc;
+        }
+        else if (menor == inicio->proc->prioridade)
+        {
+            // se forem iguais entao é FCFS
+            if (menor->submissao > inicio->proc->submissao)
+            {
+                menor = inicio->proc;
+            }
         }
         inicio = inicio->prox;
     }
@@ -158,6 +185,12 @@ void FCFS(struct Processo *processos, int procCont, int seq)
                 //[ ] executar ES tambem conta como cpu?
                 ++ocioso;
             }
+            else
+            {
+
+                // executa o pico de cpu
+                executando->cpu[executando->marcador]--;
+            }
         }
         else
         {
@@ -196,7 +229,7 @@ void FCFS(struct Processo *processos, int procCont, int seq)
     }
 }
 
-// TODO -seq no FCFS nao serve pra nada
+// TODO -seq nao serve pra nada
 void SJF(struct Processo *processos, int procCont, int seq)
 {
     // honestamente, instante local faz mais sentido da forma como estou fazendo
@@ -231,6 +264,7 @@ void SJF(struct Processo *processos, int procCont, int seq)
         if (executando == NULL)
         {
             // pega o processo com menor pico de CPU
+            //[ ] pode simplesmente pegar o menor? ou tem que fazer aquela fórmula pra descobrir qual é o menor?
             executando = procurarSJF(prontos);
 
             if (executando == NULL)
@@ -239,6 +273,12 @@ void SJF(struct Processo *processos, int procCont, int seq)
                 // TODO talvez colocar esse if la no final?
                 //[ ] executar ES tambem conta como cpu?
                 ++ocioso;
+            }
+            else
+            {
+
+                // executa o pico de cpu
+                executando->cpu[executando->marcador]--;
             }
         }
         else
@@ -269,7 +309,7 @@ void SJF(struct Processo *processos, int procCont, int seq)
                     // obviamente, isso só faz sentido se o executando conseguir mudar os proximos por referencia
                 }
                 // [ ] remover o processo da lista de prontos?
-                removerListaPont(&prontos,executando);
+                removerListaPont(&prontos, executando);
                 // vai ver qual é o proximo a executar
                 executando = NULL;
             }
@@ -277,6 +317,263 @@ void SJF(struct Processo *processos, int procCont, int seq)
         ++instante;
     }
 }
+
+// TODO -seq nao serve pra nada
+void SRTF(struct Processo *processos, int procCont, int seq)
+{
+    // honestamente, instante local faz mais sentido da forma como estou fazendo
+    int instante = 0;
+    int ocioso = 0;
+    // assim nao vamos precisar sobrescrever nada no processos original
+    struct Processo *proximos = processos;
+    // cria inicio da lista de prontos
+    struct s_no *prontos = NULL;
+
+    //[ ] EU ACHO que o ES não vai mais precisar
+    //[ ] na verdade nao entendi direito o papel do es nesse programa
+
+    // salva qual processo esta executando
+    struct Processo *executando = NULL;
+
+    int exec = 0;
+    while (exec < procCont)
+    {
+        for (int i = 0; i < procCont; i++)
+        {
+            // procura se um processo ficou pronto agora
+            if (proximos[i].submissao == instante)
+            {
+                // coloca na fila de prontos
+                inserirLista(prontos, proximos[i]);
+            }
+        }
+
+        // tem preempção
+        // pega o processo com menor pico de CPU
+        executando = procurarSJF(prontos);
+        if (executando == NULL)
+        {
+
+            // se nao tem nenhum processo pronto, o programa fica ocioso
+            ++ocioso;
+        }
+        else
+        {
+            // executa o pico de cpu
+            executando->cpu[executando->marcador]--;
+
+            // ve se já terminou
+            if (executando->cpu[executando->marcador] == 0)
+            {
+                // pula pro proximo pico de cpu
+                executando->marcador++;
+                // se o proximo pico tambem for zero
+                // FIXME e se for um valor de lixo?
+                if (executando->cpu[executando->marcador] == 0)
+                {
+                    // o processo já foi encerrado
+                    exec++;
+                    // marca com -1 pra ele não executar de novo
+                    executando->submissao = -1;
+                }
+                else
+                {
+                    // ainda tem um proximo pico
+                    // [ ] sera que dá bom fazer assim? instante de submissao modificado
+                    // ele so fica pronto de novo quando acabar a execucao da ES dele
+                    executando->submissao = instante + executando->es[(executando->marcador) - 1];
+                    // obviamente, isso só faz sentido se o executando conseguir mudar os proximos por referencia
+                }
+                // [ ] remover o processo da lista de prontos?
+                removerListaPont(&prontos, executando);
+                // vai ver qual é o proximo a executar
+                executando = NULL;
+            }
+        }
+        ++instante;
+    }
+}
+
+// TODO -seq nao serve pra nada
+void PrioridadePreemptivo(struct Processo *processos, int procCont, int seq)
+{
+    // honestamente, instante local faz mais sentido da forma como estou fazendo
+    int instante = 0;
+    int ocioso = 0;
+    // assim nao vamos precisar sobrescrever nada no processos original
+    struct Processo *proximos = processos;
+    // cria inicio da lista de prontos
+    struct s_no *prontos = NULL;
+
+    //[ ] EU ACHO que o ES não vai mais precisar
+    //[ ] na verdade nao entendi direito o papel do es nesse programa
+
+    // salva qual processo esta executando
+    struct Processo *executando = NULL;
+
+    int exec = 0;
+    while (exec < procCont)
+    {
+        for (int i = 0; i < procCont; i++)
+        {
+            // procura se um processo ficou pronto agora
+            if (proximos[i].submissao == instante)
+            {
+                // coloca na fila de prontos
+                inserirLista(prontos, proximos[i]);
+            }
+        }
+
+        // tem preempção
+        // pega o processo com menor pico de CPU
+        executando = procurarPrioridade(prontos);
+        if (executando == NULL)
+        {
+
+            // se nao tem nenhum processo pronto, o programa fica ocioso
+            ++ocioso;
+        }
+        else
+        {
+            // executa o pico de cpu
+            executando->cpu[executando->marcador]--;
+
+            // ve se já terminou
+            if (executando->cpu[executando->marcador] == 0)
+            {
+                // pula pro proximo pico de cpu
+                executando->marcador++;
+                // se o proximo pico tambem for zero
+                // FIXME e se for um valor de lixo?
+                if (executando->cpu[executando->marcador] == 0)
+                {
+                    // o processo já foi encerrado
+                    exec++;
+                    // marca com -1 pra ele não executar de novo
+                    executando->submissao = -1;
+                }
+                else
+                {
+                    // ainda tem um proximo pico
+                    // [ ] sera que dá bom fazer assim? instante de submissao modificado
+                    // ele so fica pronto de novo quando acabar a execucao da ES dele
+                    executando->submissao = instante + executando->es[(executando->marcador) - 1];
+                    // obviamente, isso só faz sentido se o executando conseguir mudar os proximos por referencia
+                }
+                // [ ] remover o processo da lista de prontos?
+                removerListaPont(&prontos, executando);
+                // vai ver qual é o proximo a executar
+                executando = NULL;
+            }
+        }
+        ++instante;
+    }
+}
+
+
+// TODO -seq no FCFS nao serve pra nada
+void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
+{
+    // honestamente, instante local faz mais sentido da forma como estou fazendo
+    int instante = 0;
+    int ocioso = 0;
+    // assim nao vamos precisar sobrescrever nada no processos original
+    struct Processo *proximos = processos;
+    // cria inicio da lista de prontos
+    // no RR especificamente, prontos sempre aponta pro inicio da lista, e atual aponta pro q vai executar
+    struct s_no *prontos = NULL, *atual;
+
+    //[ ] EU ACHO que o ES não vai mais precisar
+    //[ ] na verdade nao entendi direito o papel do es nesse programa
+
+    // salva qual processo esta executando
+    struct Processo *executando = NULL;
+
+    int exec = 0;
+    int q = 0;
+    while (exec < procCont)
+    {
+        for (int i = 0; i < procCont; i++)
+        {
+            // procura se um processo ficou pronto agora
+            if (proximos[i].submissao == instante)
+            {
+                // coloca na fila de prontos
+                inserirLista(prontos, proximos[i]);
+            }
+        }
+
+        // nao esta executando nada
+        // nao tem preempção
+        if (executando == NULL)
+        {
+            //atual é nulo quando é a primeira execucao ou ele chegou no final da fila
+            if(atual == NULL){
+                atual = prontos;
+            }
+            executando = atual;
+
+            if (executando == NULL)
+            {
+                // se nao tem nenhum processo pronto, o programa fica ocioso
+                // TODO talvez colocar esse if la no final?
+                //[ ] executar ES tambem conta como cpu?
+                ++ocioso;
+            }
+            else
+            {
+
+                // executa o pico de cpu
+                // FIXME essa execução dupla pode dar erro
+                executando->cpu[executando->marcador]--;
+                q++;
+            }
+        }
+        else
+        {
+            // executa o pico de cpu
+            executando->cpu[executando->marcador]--;
+            q++;
+
+            // ve se já terminou
+            if (executando->cpu[executando->marcador] == 0)
+            {
+                // pula pro proximo pico de cpu
+                executando->marcador++;
+                // se o proximo pico tambem for zero
+                // FIXME e se for um valor de lixo?
+                if (executando->cpu[executando->marcador] == 0)
+                {
+                    // o processo já foi encerrado
+                    exec++;
+                    // marca com -1 pra ele não executar de novo
+                    executando->submissao = -1;
+                }
+                else
+                {
+                    // ainda tem um proximo pico
+                    // [ ] sera que dá bom fazer assim? instante de submissao modificado
+                    // ele so fica pronto de novo quando acabar a execucao da ES dele
+                    executando->submissao = instante + executando->es[(executando->marcador) - 1];
+                    // obviamente, isso só faz sentido se o executando conseguir mudar os proximos por referencia
+                }
+                // [ ] remover o processo da lista de prontos?
+                removerListaIni(&prontos);
+                // vai ver qual é o proximo a executar
+                executando = NULL;
+                atual = atual->prox;
+            }
+
+            if(q = quantum){
+                //se ja chegou no quantum tem q executar o proximo
+                executando = NULL;
+                atual = atual->prox;
+            }
+        }
+        ++instante;
+    }
+}
+
 
 int main(int argc, char *argv[])
 {
