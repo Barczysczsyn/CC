@@ -29,9 +29,6 @@ struct s_no
 
 void inserirLista(struct s_no **inicio, struct Processo *processo)
 {
-    printf("inseriu");
-    printf("processo P%d", processo->indice);
-    fflush(stdout);
     if (*inicio != NULL)
     {
         struct s_no *p1 = *inicio;
@@ -151,8 +148,10 @@ struct Processo *procurarPrioridade(struct s_no *inicio)
 // TODO -seq no FCFS nao serve pra nada
 void FCFS(struct Processo *processos, int procCont, int seq)
 {
+    printf("FCFS: ");
     // honestamente, instante local faz mais sentido da forma como estou fazendo
-    int instante = 0;
+    //instante é 1 né?
+    int instante = 1;
     int ocioso = 0;
     int clock = 0;
     // assim nao vamos precisar sobrescrever nada no processos original
@@ -169,8 +168,7 @@ void FCFS(struct Processo *processos, int procCont, int seq)
     int exec = 0;
     while (exec < procCont)
     {
-        // XXX TESTE
-        printf("\ninstante %d", instante);
+    //printf("\ninstante %d",instante);
         // para marcar no diagrama de gantt
         for (int i = 0; i < procCont; i++)
         {
@@ -182,12 +180,6 @@ void FCFS(struct Processo *processos, int procCont, int seq)
             }
         }
 
-        // XXX TESTE
-        if (prontos == NULL)
-        {
-            printf("prontosnulo");
-        }
-
         // nao esta executando nada
         // nao tem preempção
         if (executando == NULL)
@@ -196,16 +188,13 @@ void FCFS(struct Processo *processos, int procCont, int seq)
             if (prontos != NULL)
             {
                 executando = prontos->proc;
-
-                printf("\npronts %d", prontos->proc->indice);
-                fflush(stdout);
             }
 
             if (executando == NULL)
             {
                 // se nao tem nenhum processo pronto, o programa fica ocioso
                 // TODO talvez colocar esse if la no final?
-                //[ ] executar ES tambem conta como cpu?
+                // [ ] executar ES tambem conta como cpu?
                 ++ocioso;
                 ++clock;
             }
@@ -213,9 +202,14 @@ void FCFS(struct Processo *processos, int procCont, int seq)
             {
                 // escrever no diagrama de gantt quanto tempo ficou ocioso
                 // TODO no primeiro é diferente
-                printf("*** %d|", clock);
+                //se for 0 nao tem porque printar
+                if (clock > 0)
+                {
+                    printf("*** %d|", instante);
+                }
                 clock = 0;
 
+                /**/ 
                 // executa o pico de cpu
                 executando->cpu[executando->marcador]--;
                 ++clock;
@@ -224,9 +218,8 @@ void FCFS(struct Processo *processos, int procCont, int seq)
         else
         {
             // executa o pico de cpu
-            printf("\nexecutando P%d", executando->indice);
-            fflush(stdout);
-            printf("\ncheegou!!");
+            // printf("\nexecutando P%d", executando->indice);
+            // fflush(stdout);
             executando->cpu[executando->marcador]--;
             ++clock;
 
@@ -252,7 +245,7 @@ void FCFS(struct Processo *processos, int procCont, int seq)
                     // obviamente, isso só faz sentido se o executando conseguir mudar os proximos por referencia
                 }
                 // escrever no diagrama de gantt
-                printf("P%d %d|", executando->indice, clock);
+                printf("P%d %d|", executando->indice, instante);
                 clock = 0;
                 // [ ] remover o processo da lista de prontos?
                 removerListaIni(&prontos);
@@ -261,7 +254,7 @@ void FCFS(struct Processo *processos, int procCont, int seq)
             }
         }
         ++instante;
-        sleep(1);
+        // sleep(1);
     }
 }
 
@@ -729,7 +722,7 @@ int main(int argc, char *argv[])
 
         // o nome é dado pela ordem de chegada, sem depender da leitura do arquivo
         //+1 pra ficar como no do fabricio
-        processos[i].indice = i+1;
+        processos[i].indice = i + 1;
     }
 
     // Codigo do strtok
