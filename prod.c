@@ -4,6 +4,13 @@
 #include <string.h>
 #include <unistd.h>
 
+//TODO é para coisas que ainda tem que fazer
+//FIXME é para erros que precisam ser arrumados
+//BUG é para erros que acontecem, mas ainda nao se entende como
+//[ ] é para duvidas quanto ao trabalho
+//[x] é para duvidas ja resolvidas
+//HACK é para novas ideias de implementacao
+//XXX nao sei pra que ainda
 int main()
 {
 	/* o tamanho (em bytes) do objeto de memória compartilhada */

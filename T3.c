@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+// XXX TESTE
+#include <unistd.h>
 
 #define MAX_CPU 50
 #define MAX_PROC 50
@@ -25,47 +27,50 @@ struct s_no
 };
 // typedef struct s_no No;
 
-void inserirLista(struct s_no *inicio, struct Processo processo)
+void inserirLista(struct s_no **inicio, struct Processo *processo)
 {
-    // vai ate o ultimo no
-    //[ ] nao vai mudar a referencia do primeiro como aquele outro codigo?
-    while (inicio->prox != NULL)
+    printf("inseriu");
+    printf("processo P%d", processo->indice);
+    fflush(stdout);
+    if (*inicio != NULL)
     {
-        inicio = inicio->prox;
-    }
+        struct s_no *p1 = *inicio;
+        // vai ate o ultimo no
+        while (p1->prox != NULL)
+        {
+            p1 = p1->prox;
+        }
 
-    struct s_no *novo = malloc(sizeof(struct s_no));
-    // o negocio do endereco é duvidoso
-    //[ ] testar
-    novo->proc = &processo;
-    novo->prox = NULL;
-    inicio->prox = novo;
-}
-
-void removerMarca(struct s_no **inicio)
-{
-    // TODO tratar se for o primeiro e tal
-    struct s_no *p1 = *inicio, *p2;
-    while (p1->prox != NULL && p1->proc->marcador != -1)
-    {
-        p2 = p1;
-        p1 = p1->prox;
-    }
-    if (p1->proc->marcador == -1)
-    {
-        // costura o que sobrou
-        p2->prox = p1->prox;
+        struct s_no *novo = malloc(sizeof(struct s_no));
+        // o negocio do endereco é duvidoso
         //[ ] testar
-        free(p1);
+        novo->proc = processo;
+        novo->prox = NULL;
+        p1->prox = novo;
+    }
+    else
+    {
+        struct s_no *novo = malloc(sizeof(struct s_no));
+        novo->proc = processo;
+        novo->prox = NULL;
+        *inicio = novo;
     }
 }
 
 void removerListaIni(struct s_no **inicio)
 {
+
     // retira o primeiro elemento da lista
-    struct s_no *temp = *inicio;
-    *inicio = (*inicio)->prox;
-    free(temp);
+    if (*inicio != NULL)
+    {
+        struct s_no *temp = *inicio;
+        *inicio = (*inicio)->prox;
+        free(temp);
+    }
+    else
+    {
+        perror("remocao do no inicial");
+    }
 }
 
 //[ ] o x nao devia ser por referencia tambem?
@@ -149,6 +154,7 @@ void FCFS(struct Processo *processos, int procCont, int seq)
     // honestamente, instante local faz mais sentido da forma como estou fazendo
     int instante = 0;
     int ocioso = 0;
+    int clock = 0;
     // assim nao vamos precisar sobrescrever nada no processos original
     struct Processo *proximos = processos;
     // cria inicio da lista de prontos
@@ -163,14 +169,23 @@ void FCFS(struct Processo *processos, int procCont, int seq)
     int exec = 0;
     while (exec < procCont)
     {
+        // XXX TESTE
+        printf("\ninstante %d", instante);
+        // para marcar no diagrama de gantt
         for (int i = 0; i < procCont; i++)
         {
             // procura se um processo ficou pronto agora
             if (proximos[i].submissao == instante)
             {
                 // coloca na fila de prontos
-                inserirLista(prontos, proximos[i]);
+                inserirLista(&prontos, &proximos[i]);
             }
+        }
+
+        // XXX TESTE
+        if (prontos == NULL)
+        {
+            printf("prontosnulo");
         }
 
         // nao esta executando nada
@@ -178,7 +193,13 @@ void FCFS(struct Processo *processos, int procCont, int seq)
         if (executando == NULL)
         {
             // pega o processo com menor tempo de submissao, que obviamente é o primeiro da fila
-            executando = prontos->proc;
+            if (prontos != NULL)
+            {
+                executando = prontos->proc;
+
+                printf("\npronts %d", prontos->proc->indice);
+                fflush(stdout);
+            }
 
             if (executando == NULL)
             {
@@ -186,18 +207,28 @@ void FCFS(struct Processo *processos, int procCont, int seq)
                 // TODO talvez colocar esse if la no final?
                 //[ ] executar ES tambem conta como cpu?
                 ++ocioso;
+                ++clock;
             }
             else
             {
+                // escrever no diagrama de gantt quanto tempo ficou ocioso
+                // TODO no primeiro é diferente
+                printf("*** %d|", clock);
+                clock = 0;
 
                 // executa o pico de cpu
                 executando->cpu[executando->marcador]--;
+                ++clock;
             }
         }
         else
         {
             // executa o pico de cpu
+            printf("\nexecutando P%d", executando->indice);
+            fflush(stdout);
+            printf("\ncheegou!!");
             executando->cpu[executando->marcador]--;
+            ++clock;
 
             // ve se já terminou
             if (executando->cpu[executando->marcador] == 0)
@@ -205,7 +236,6 @@ void FCFS(struct Processo *processos, int procCont, int seq)
                 // pula pro proximo pico de cpu
                 executando->marcador++;
                 // se o proximo pico tambem for zero
-                // FIXME e se for um valor de lixo?
                 if (executando->cpu[executando->marcador] == 0)
                 {
                     // o processo já foi encerrado
@@ -221,6 +251,9 @@ void FCFS(struct Processo *processos, int procCont, int seq)
                     executando->submissao = instante + executando->es[(executando->marcador) - 1];
                     // obviamente, isso só faz sentido se o executando conseguir mudar os proximos por referencia
                 }
+                // escrever no diagrama de gantt
+                printf("P%d %d|", executando->indice, clock);
+                clock = 0;
                 // [ ] remover o processo da lista de prontos?
                 removerListaIni(&prontos);
                 // vai ver qual é o proximo a executar
@@ -228,6 +261,7 @@ void FCFS(struct Processo *processos, int procCont, int seq)
             }
         }
         ++instante;
+        sleep(1);
     }
 }
 
@@ -257,7 +291,7 @@ void SJF(struct Processo *processos, int procCont, int seq)
             if (proximos[i].submissao == instante)
             {
                 // coloca na fila de prontos
-                inserirLista(prontos, proximos[i]);
+                inserirLista(&prontos, &proximos[i]);
             }
         }
 
@@ -294,7 +328,6 @@ void SJF(struct Processo *processos, int procCont, int seq)
                 // pula pro proximo pico de cpu
                 executando->marcador++;
                 // se o proximo pico tambem for zero
-                // FIXME e se for um valor de lixo?
                 if (executando->cpu[executando->marcador] == 0)
                 {
                     // o processo já foi encerrado
@@ -346,7 +379,7 @@ void SRTF(struct Processo *processos, int procCont, int seq)
             if (proximos[i].submissao == instante)
             {
                 // coloca na fila de prontos
-                inserirLista(prontos, proximos[i]);
+                inserirLista(&prontos, &proximos[i]);
             }
         }
 
@@ -370,7 +403,6 @@ void SRTF(struct Processo *processos, int procCont, int seq)
                 // pula pro proximo pico de cpu
                 executando->marcador++;
                 // se o proximo pico tambem for zero
-                // FIXME e se for um valor de lixo?
                 if (executando->cpu[executando->marcador] == 0)
                 {
                     // o processo já foi encerrado
@@ -422,7 +454,7 @@ void PrioridadePreemptivo(struct Processo *processos, int procCont, int seq)
             if (proximos[i].submissao == instante)
             {
                 // coloca na fila de prontos
-                inserirLista(prontos, proximos[i]);
+                inserirLista(&prontos, &proximos[i]);
             }
         }
 
@@ -446,7 +478,6 @@ void PrioridadePreemptivo(struct Processo *processos, int procCont, int seq)
                 // pula pro proximo pico de cpu
                 executando->marcador++;
                 // se o proximo pico tambem for zero
-                // FIXME e se for um valor de lixo?
                 if (executando->cpu[executando->marcador] == 0)
                 {
                     // o processo já foi encerrado
@@ -471,8 +502,9 @@ void PrioridadePreemptivo(struct Processo *processos, int procCont, int seq)
         ++instante;
     }
 }
-
-// TODO -seq no FCFS nao serve pra nada
+// HACK agora que penso, dá pra fazer -seq com apenas um numero:
+// vc vai adicionando os tempos de ES nele, e sempre q for recolocar o processo em espera vc adiciona esse numero no tempo de submissao
+//  TODO -seq no FCFS nao serve pra nada
 void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
 {
     // honestamente, instante local faz mais sentido da forma como estou fazendo
@@ -482,7 +514,7 @@ void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
     struct Processo *proximos = processos;
     // cria inicio da lista de prontos
     // no RR especificamente, prontos sempre aponta pro inicio da lista, e atual aponta pro q vai executar
-    struct s_no *prontos = NULL, *atual;
+    struct s_no *prontos = NULL, *atual = NULL;
 
     //[ ] EU ACHO que o ES não vai mais precisar
     //[ ] na verdade nao entendi direito o papel do es nesse programa
@@ -500,7 +532,7 @@ void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
             if (proximos[i].submissao == instante)
             {
                 // coloca na fila de prontos
-                inserirLista(prontos, proximos[i]);
+                inserirLista(&prontos, &proximos[i]);
             }
         }
 
@@ -543,7 +575,6 @@ void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
                 // pula pro proximo pico de cpu
                 executando->marcador++;
                 // se o proximo pico tambem for zero
-                // FIXME e se for um valor de lixo?
                 if (executando->cpu[executando->marcador] == 0)
                 {
                     // o processo já foi encerrado
@@ -582,6 +613,7 @@ int main(int argc, char *argv[])
     if (argc < 3)
     {
         printf("\nquantidade de argumentos inválida");
+        printf("\nEscreva: nome do programa - nome do arquivo a ser lido - numero de quantum - sequencial ou nao");
         return 0;
     }
 
@@ -640,7 +672,7 @@ int main(int argc, char *argv[])
 
     // Codigo do strtok
 
-    printf("\ntexto %s ", texto);
+    // printf("\ntexto %s ", texto);
     char *proc = strtok(texto, "\n");
 
     int numProc = 0, numArgs = 0, numCpu = 0, numEs = 0;
@@ -648,12 +680,12 @@ int main(int argc, char *argv[])
     while (proc != NULL)
     {
         strcpy(textoProc[numProc], proc);
-        printf("\n%s", textoProc[numProc]);
+        // printf("\n%s", textoProc[numProc]);
         ++numProc;
         proc = strtok(NULL, "\n");
     }
 
-    printf("\nnumproc %d", numProc);
+    // printf("\nnumproc %d", numProc);
 
     fflush(stdout);
 
@@ -688,22 +720,30 @@ int main(int argc, char *argv[])
                 args = strtok(NULL, " ");
             }
         }
-        printf("\ncheegou");
+        // coloca 0 no final
+        processos[i].cpu[numCpu] = 0;
+        processos[i].es[numEs] = 0;
+        processos[i].marcador = 0;
+        // printf("\ncheegou");
         fflush(stdout);
 
         // o nome é dado pela ordem de chegada, sem depender da leitura do arquivo
-        processos[i].indice = i;
+        //+1 pra ficar como no do fabricio
+        processos[i].indice = i+1;
     }
 
     // Codigo do strtok
 
+    /*
     for (int i = 0; i < numProc; i++)
     {
         printf("\nprocesso %d", i);
         printf("\n %d %d %d %d %d", processos[i].prioridade, processos[i].submissao, processos[i].cpu[0], processos[i].es[0], processos[i].cpu[1]);
         fflush(stdout);
     }
+        */
 
+    FCFS(processos, numProc, seq);
     strcat(entrada, ".out");
     FILE *saida = fopen(entrada, "w");
 
