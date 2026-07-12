@@ -125,17 +125,16 @@ struct Processo *procurarSJF(struct s_no **inicio)
         struct Processo *menor;
         menor = (*inicio)->proc;
         struct s_no *p1 = *inicio;
-        //[ ] nao vai mudar a referencia pro primeiro como aquele outro codigo?
         while (p1->prox != NULL)
         {
-            // ve qual tem o menor pico de cpu
+            p1 = p1->prox;
+            // printf("pont P%d ->",p1->proc->indice);
+            //  ve qual tem o menor pico de cpu
             if (menor->cpu[menor->marcador] > p1->proc->cpu[p1->proc->marcador])
             {
                 menor = p1->proc;
             }
-            p1 = p1->prox;
         }
-        //[ ] retorna variável local?
         return menor;
     }
 }
@@ -403,9 +402,11 @@ void SJF(struct Processo *processos, int procCont, int seq)
 // TODO -seq nao serve pra nada
 void SRTF(struct Processo *processos, int procCont, int seq)
 {
+    printf("SRTF: ");
     // honestamente, instante local faz mais sentido da forma como estou fazendo
     int instante = 0;
     int ocioso = 0;
+    int clock = 0;
     // assim nao vamos precisar sobrescrever nada no processos original
     struct Processo *proximos = processos;
     // cria inicio da lista de prontos
@@ -420,55 +421,97 @@ void SRTF(struct Processo *processos, int procCont, int seq)
     int exec = 0;
     while (exec < procCont)
     {
+        //jeito bem anta de se arrumar
+        int flag=0;
+        // executando = NULL;
+        printf("\ninstante %d", instante);
         for (int i = 0; i < procCont; i++)
         {
             // procura se um processo ficou pronto agora
             if (proximos[i].submissao == instante)
             {
-                // coloca na fila de prontos
+                // printf("inseriu P%d",proximos[i].indice);
+                //  coloca na fila de prontos
                 inserirLista(&prontos, &proximos[i]);
             }
         }
+        // pelo jeito que o programa é formatado, precisa disso daqui
+
+        struct Processo *novo = NULL;
 
         // tem preempção
         // pega o processo com menor pico de CPU
-        executando = procurarSJF(&prontos);
-        if (executando == NULL)
+        novo = procurarSJF(&prontos);
+        if (novo == NULL)
         {
 
             // se nao tem nenhum processo pronto, o programa fica ocioso
             ++ocioso;
+            ++clock;
         }
         else
         {
-            // executa o pico de cpu
-            executando->cpu[executando->marcador]--;
-
-            // ve se já terminou
-            if (executando->cpu[executando->marcador] == 0)
+            // TODO talvez isso tenha ficado muito baguncado
+            // talvez podia ser mais simples
+            if (novo != executando)
             {
-                // pula pro proximo pico de cpu
-                executando->marcador++;
-                // se o proximo pico tambem for zero
+                // se o processo terminou ou foi interrompido
+                if (executando != NULL)
+                // se um processo foi interrompido
+                {
+                    printf("P%d %d| interrompido", executando->indice, instante);
+                    //BUG o caso em que entra aqui e o processo é executado
+                    flag = 1;
+                // executa o pico de cpu
+                executando->cpu[executando->marcador]--;
+                printf("executando P%d", executando->indice);
+                }
+                executando = novo;
+            }
+            if (clock > 0)
+            {
+                //se ficou um tempo ocioso
+                // esse clock é apenas para ocioso
+
+                printf("*** %d|", instante);
+                clock = 0;
+            }
+            else if(!flag)
+            {
+                // executa o pico de cpu
+                executando->cpu[executando->marcador]--;
+                printf("executando P%d", executando->indice);
+
+                // ve se já terminou
                 if (executando->cpu[executando->marcador] == 0)
                 {
-                    // o processo já foi encerrado
-                    exec++;
-                    // marca com -1 pra ele não executar de novo
-                    executando->submissao = -1;
+                    // pula pro proximo pico de cpu
+                    executando->marcador++;
+                    // se o proximo pico tambem for zero
+                    if (executando->cpu[executando->marcador] == 0)
+                    {
+                        // o processo já foi encerrado
+                        exec++;
+                        // marca com -1 pra ele não executar de novo
+                        executando->submissao = -1;
+                    }
+                    else
+                    {
+                        // ainda tem um proximo pico
+                        // [ ] sera que dá bom fazer assim? instante de submissao modificado
+                        // ele so fica pronto de novo quando acabar a execucao da ES dele
+                        executando->submissao = instante + executando->es[(executando->marcador) - 1];
+                        // obviamente, isso só faz sentido se o executando conseguir mudar os proximos por referencia
+                    }
+
+                    // escrever no diagrama de gantt
+                    printf("P%d %d|", executando->indice, instante);
+                    // clock = 0;
+                    //  [ ] remover o processo da lista de prontos?
+                    removerLista(&prontos, executando->indice);
+                    // vai ver qual é o proximo a executar
+                    executando = NULL;
                 }
-                else
-                {
-                    // ainda tem um proximo pico
-                    // [ ] sera que dá bom fazer assim? instante de submissao modificado
-                    // ele so fica pronto de novo quando acabar a execucao da ES dele
-                    executando->submissao = instante + executando->es[(executando->marcador) - 1];
-                    // obviamente, isso só faz sentido se o executando conseguir mudar os proximos por referencia
-                }
-                // [ ] remover o processo da lista de prontos?
-                removerLista(&prontos, executando->indice);
-                // vai ver qual é o proximo a executar
-                executando = NULL;
             }
         }
         ++instante;
@@ -790,8 +833,11 @@ int main(int argc, char *argv[])
     }
         */
 
+    // FIXME processos é passado por referencia, quer dizer que só uma funcao pode ser usada
     // FCFS(processos, numProc, seq);
-    SJF(processos, numProc, seq);
+    // SJF(processos, numProc, seq);
+    SRTF(processos, numProc, seq);
+
     strcat(entrada, ".out");
     FILE *saida = fopen(entrada, "w");
 
