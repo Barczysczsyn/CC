@@ -150,7 +150,7 @@ void FCFS(struct Processo *processos, int procCont, int seq)
 {
     printf("FCFS: ");
     // honestamente, instante local faz mais sentido da forma como estou fazendo
-    //instante é 1 né?
+    // instante é 1 né?
     int instante = 1;
     int ocioso = 0;
     int clock = 0;
@@ -168,8 +168,8 @@ void FCFS(struct Processo *processos, int procCont, int seq)
     int exec = 0;
     while (exec < procCont)
     {
-    //printf("\ninstante %d",instante);
-        // para marcar no diagrama de gantt
+        printf("\ninstante %d", instante);
+        //  para marcar no diagrama de gantt
         for (int i = 0; i < procCont; i++)
         {
             // procura se um processo ficou pronto agora
@@ -197,31 +197,39 @@ void FCFS(struct Processo *processos, int procCont, int seq)
                 // [ ] executar ES tambem conta como cpu?
                 ++ocioso;
                 ++clock;
+                printf("ocioso");
             }
             else
             {
                 // escrever no diagrama de gantt quanto tempo ficou ocioso
                 // TODO no primeiro é diferente
-                //se for 0 nao tem porque printar
+                // se for 0 nao tem porque printar
                 if (clock > 0)
                 {
                     printf("*** %d|", instante);
                 }
+                else
+                {
+
+                    // executa o pico de cpu
+                    //so precisa disso se o turnaround nao durou nada
+                    executando->cpu[executando->marcador]--;
+                    ++clock;
+                }
                 clock = 0;
 
-                /**/ 
-                // executa o pico de cpu
-                executando->cpu[executando->marcador]--;
-                ++clock;
+                printf("executando P%d", executando->indice);
+
             }
         }
         else
         {
             // executa o pico de cpu
-            // printf("\nexecutando P%d", executando->indice);
+            printf("executando P%d", executando->indice);
             // fflush(stdout);
             executando->cpu[executando->marcador]--;
             ++clock;
+            // printf("+1");
 
             // ve se já terminou
             if (executando->cpu[executando->marcador] == 0)

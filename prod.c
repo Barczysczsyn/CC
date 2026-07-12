@@ -10,7 +10,7 @@
 //[ ] é para duvidas quanto ao trabalho
 //[x] é para duvidas ja resolvidas
 //HACK é para novas ideias de implementacao
-//XXX nao sei pra que ainda
+//XXX por enquanto, para qualquer coisa que precise de atenção
 int main()
 {
 	/* o tamanho (em bytes) do objeto de memória compartilhada */
