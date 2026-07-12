@@ -581,11 +581,53 @@ void PrioridadePreemptivo(struct Processo *processos, int procCont, int seq)
                     printf("P%d %d| interrompido", executando->indice, instante);
                     flag = 1;
                     // executa o pico de cpu
+                    executando->cpu[executando->marcador]--;
+                    printf("executando P%d", executando->indice);
+                    // ve se já terminou
+                    if (executando->cpu[executando->marcador] == 0)
+                    {
+                        // pula pro proximo pico de cpu
+                        executando->marcador++;
+                        // se o proximo pico tambem for zero
+                        if (executando->cpu[executando->marcador] == 0)
+                        {
+                            // o processo já foi encerrado
+                            exec++;
+                            // marca com -1 pra ele não executar de novo
+                            executando->submissao = -1;
+                        }
+                        else
+                        {
+                            // ainda tem um proximo pico
+                            // [ ] sera que dá bom fazer assim? instante de submissao modificado
+                            // ele so fica pronto de novo quando acabar a execucao da ES dele
+                            executando->submissao = instante + executando->es[(executando->marcador) - 1];
+                            // obviamente, isso só faz sentido se o executando conseguir mudar os proximos por referencia
+                        }
+                        // escrever no diagrama de gantt
+                        printf("P%d %d|", executando->indice, instante);
+                        // [ ] remover o processo da lista de prontos?
+                        removerLista(&prontos, executando->indice);
+                        // vai ver qual é o proximo a executar
+                        executando = NULL;
+                    }
                 }
                 executando = novo;
+            }
+            if (clock > 0)
+            {
+                // se ficou um tempo ocioso
+                //  esse clock é apenas para ocioso
 
+                printf("*** %d|", instante);
+                clock = 0;
+            }
+            else if (!flag)
+            {
+                // executa o pico de cpu
                 executando->cpu[executando->marcador]--;
                 printf("executando P%d", executando->indice);
+
                 // ve se já terminou
                 if (executando->cpu[executando->marcador] == 0)
                 {
@@ -615,17 +657,8 @@ void PrioridadePreemptivo(struct Processo *processos, int procCont, int seq)
                     executando = NULL;
                 }
             }
-            if (clock > 0)
-            {
-                // se ficou um tempo ocioso
-                //  esse clock é apenas para ocioso
-
-                printf("*** %d|", instante);
-                clock = 0;
-            }
         }
         ++instante;
-        sleep(1);
     }
 }
 // HACK agora que penso, dá pra fazer -seq com apenas um numero:
