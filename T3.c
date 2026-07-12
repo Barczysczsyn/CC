@@ -70,29 +70,41 @@ void removerListaIni(struct s_no **inicio)
     }
 }
 
-//[ ] o x nao devia ser por referencia tambem?
 void removerLista(struct s_no **inicio, int x)
 {
-    // retira o elemento comparando os ponteiros, deve ser um mau habito
-    struct s_no *p1 = *inicio, *p2;
-    while (p1->proc->indice != x && p1->prox != NULL)
+    if (*inicio == NULL)
     {
-        p2 = p1;
-        p1 = p1->prox;
+        // nada
     }
-
-    if (p1->proc->indice == x)
+    else if ((*inicio)->proc->indice == x)
     {
-        struct s_no *temp = p1;
-        // costura o resto
-        p1 = p1->prox;
-        p2->prox = p1;
-        // remove o no
+        struct s_no *temp = *inicio;
+        *inicio = (*inicio)->prox;
         free(temp);
     }
     else
     {
-        perror("remocao do no");
+        // retira o elemento comparando os ponteiros, deve ser um mau habito
+        struct s_no *p1 = *inicio, *p2;
+        while (p1->proc->indice != x && p1->prox != NULL)
+        {
+            p2 = p1;
+            p1 = p1->prox;
+        }
+
+        if (p1->proc->indice == x)
+        {
+            struct s_no *temp = p1;
+            // costura o resto
+            p1 = p1->prox;
+            p2->prox = p1;
+            // remove o no
+            free(temp);
+        }
+        else
+        {
+            perror("remocao do no");
+        }
     }
 }
 
@@ -102,22 +114,30 @@ void removerLista(struct s_no **inicio, int x)
 //[x] nao precisa de fila de ES
 // ES e CPU são executados separadamente
 
-struct Processo *procurarSJF(struct s_no *inicio)
+struct Processo *procurarSJF(struct s_no **inicio)
 {
-    struct Processo *menor;
-    menor = inicio->proc;
-    //[ ] nao vai mudar a referencia pro primeiro como aquele outro codigo?
-    while (inicio != NULL)
+    if (*inicio == NULL)
     {
-        // ve qual tem o menor pico de cpu
-        if (menor->cpu[menor->marcador] > inicio->proc->cpu[inicio->proc->marcador])
-        {
-            menor = inicio->proc;
-        }
-        inicio = inicio->prox;
+        return NULL;
     }
-    //[ ] retorna variável local?
-    return menor;
+    else
+    {
+        struct Processo *menor;
+        menor = (*inicio)->proc;
+        struct s_no *p1 = *inicio;
+        //[ ] nao vai mudar a referencia pro primeiro como aquele outro codigo?
+        while (p1->prox != NULL)
+        {
+            // ve qual tem o menor pico de cpu
+            if (menor->cpu[menor->marcador] > p1->proc->cpu[p1->proc->marcador])
+            {
+                menor = p1->proc;
+            }
+            p1 = p1->prox;
+        }
+        //[ ] retorna variável local?
+        return menor;
+    }
 }
 struct Processo *procurarPrioridade(struct s_no *inicio)
 {
@@ -197,7 +217,7 @@ void FCFS(struct Processo *processos, int procCont, int seq)
                 // [ ] executar ES tambem conta como cpu?
                 ++ocioso;
                 ++clock;
-                printf("ocioso");
+                // printf("ocioso");
             }
             else
             {
@@ -212,20 +232,19 @@ void FCFS(struct Processo *processos, int procCont, int seq)
                 {
 
                     // executa o pico de cpu
-                    //so precisa disso se o turnaround nao durou nada
+                    // so precisa disso se o ngc nao durou nada
                     executando->cpu[executando->marcador]--;
-                    ++clock;
+                    //++clock;
                 }
                 clock = 0;
 
-                printf("executando P%d", executando->indice);
-
+                // printf("executando P%d", executando->indice);
             }
         }
         else
         {
             // executa o pico de cpu
-            printf("executando P%d", executando->indice);
+            // printf("executando P%d", executando->indice);
             // fflush(stdout);
             executando->cpu[executando->marcador]--;
             ++clock;
@@ -269,9 +288,11 @@ void FCFS(struct Processo *processos, int procCont, int seq)
 // TODO -seq nao serve pra nada
 void SJF(struct Processo *processos, int procCont, int seq)
 {
+    printf("SJF: ");
     // honestamente, instante local faz mais sentido da forma como estou fazendo
     int instante = 0;
     int ocioso = 0;
+    int clock = 0;
     // assim nao vamos precisar sobrescrever nada no processos original
     struct Processo *proximos = processos;
     // cria inicio da lista de prontos
@@ -286,12 +307,16 @@ void SJF(struct Processo *processos, int procCont, int seq)
     int exec = 0;
     while (exec < procCont)
     {
+        // printf("\ninstante %d", instante);
         for (int i = 0; i < procCont; i++)
         {
+            // printf("submissao %d",proximos[i].submissao);
+            fflush(stdout);
             // procura se um processo ficou pronto agora
             if (proximos[i].submissao == instante)
             {
-                // coloca na fila de prontos
+                // printf("inseriu");
+                //  coloca na fila de prontos
                 inserirLista(&prontos, &proximos[i]);
             }
         }
@@ -302,7 +327,7 @@ void SJF(struct Processo *processos, int procCont, int seq)
         {
             // pega o processo com menor pico de CPU
             //[ ] pode simplesmente pegar o menor? ou tem que fazer aquela fórmula pra descobrir qual é o menor?
-            executando = procurarSJF(prontos);
+            executando = procurarSJF(&prontos);
 
             if (executando == NULL)
             {
@@ -310,18 +335,34 @@ void SJF(struct Processo *processos, int procCont, int seq)
                 // TODO talvez colocar esse if la no final?
                 //[ ] executar ES tambem conta como cpu?
                 ++ocioso;
+                ++clock;
+                // printf("ocioso");
             }
             else
             {
 
-                // executa o pico de cpu
-                executando->cpu[executando->marcador]--;
+                // se for 0 nao tem porque printars
+                if (clock > 0)
+                {
+                    printf("*** %d|", instante);
+                }
+                else
+                {
+
+                    // executa o pico de cpu
+                    executando->cpu[executando->marcador]--;
+                    //++clock;
+                }
+                clock = 0;
+                // printf("executando P%d", executando->indice);
             }
         }
         else
         {
             // executa o pico de cpu
+            // printf("executando P%d", executando->indice);
             executando->cpu[executando->marcador]--;
+            ++clock;
 
             // ve se já terminou
             if (executando->cpu[executando->marcador] == 0)
@@ -344,6 +385,10 @@ void SJF(struct Processo *processos, int procCont, int seq)
                     executando->submissao = instante + executando->es[(executando->marcador) - 1];
                     // obviamente, isso só faz sentido se o executando conseguir mudar os proximos por referencia
                 }
+
+                // escrever no diagrama de gantt
+                printf("P%d %d|", executando->indice, instante);
+                clock = 0;
                 // [ ] remover o processo da lista de prontos?
                 removerLista(&prontos, executando->indice);
                 // vai ver qual é o proximo a executar
@@ -351,6 +396,7 @@ void SJF(struct Processo *processos, int procCont, int seq)
             }
         }
         ++instante;
+        // sleep(1);
     }
 }
 
@@ -386,7 +432,7 @@ void SRTF(struct Processo *processos, int procCont, int seq)
 
         // tem preempção
         // pega o processo com menor pico de CPU
-        executando = procurarSJF(prontos);
+        executando = procurarSJF(&prontos);
         if (executando == NULL)
         {
 
@@ -744,7 +790,8 @@ int main(int argc, char *argv[])
     }
         */
 
-    FCFS(processos, numProc, seq);
+    // FCFS(processos, numProc, seq);
+    SJF(processos, numProc, seq);
     strcat(entrada, ".out");
     FILE *saida = fopen(entrada, "w");
 
