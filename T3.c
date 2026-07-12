@@ -9,6 +9,8 @@
 #define false 0
 struct Processo
 {
+    // o "nome" do processo
+    int indice;
     int prioridade, submissao;
     int cpu[MAX_CPU];
     int es[MAX_CPU];
@@ -26,7 +28,7 @@ struct s_no
 void inserirLista(struct s_no *inicio, struct Processo processo)
 {
     // vai ate o ultimo no
-    //[ ] nao vai mudar a referencia pro primeiro como aquele outro codigo?
+    //[ ] nao vai mudar a referencia do primeiro como aquele outro codigo?
     while (inicio->prox != NULL)
     {
         inicio = inicio->prox;
@@ -67,17 +69,17 @@ void removerListaIni(struct s_no **inicio)
 }
 
 //[ ] o x nao devia ser por referencia tambem?
-void removerListaPont(struct s_no **inicio, struct Processo *x)
+void removerLista(struct s_no **inicio, int x)
 {
     // retira o elemento comparando os ponteiros, deve ser um mau habito
     struct s_no *p1 = *inicio, *p2;
-    while (p1->proc != x && p1->prox != NULL)
+    while (p1->proc->indice != x && p1->prox != NULL)
     {
         p2 = p1;
         p1 = p1->prox;
     }
 
-    if (p1->proc == x)
+    if (p1->proc->indice == x)
     {
         struct s_no *temp = p1;
         // costura o resto
@@ -309,7 +311,7 @@ void SJF(struct Processo *processos, int procCont, int seq)
                     // obviamente, isso só faz sentido se o executando conseguir mudar os proximos por referencia
                 }
                 // [ ] remover o processo da lista de prontos?
-                removerListaPont(&prontos, executando);
+                removerLista(&prontos, executando->indice);
                 // vai ver qual é o proximo a executar
                 executando = NULL;
             }
@@ -385,7 +387,7 @@ void SRTF(struct Processo *processos, int procCont, int seq)
                     // obviamente, isso só faz sentido se o executando conseguir mudar os proximos por referencia
                 }
                 // [ ] remover o processo da lista de prontos?
-                removerListaPont(&prontos, executando);
+                removerLista(&prontos, executando->indice);
                 // vai ver qual é o proximo a executar
                 executando = NULL;
             }
@@ -461,7 +463,7 @@ void PrioridadePreemptivo(struct Processo *processos, int procCont, int seq)
                     // obviamente, isso só faz sentido se o executando conseguir mudar os proximos por referencia
                 }
                 // [ ] remover o processo da lista de prontos?
-                removerListaPont(&prontos, executando);
+                removerLista(&prontos, executando->indice);
                 // vai ver qual é o proximo a executar
                 executando = NULL;
             }
@@ -469,7 +471,6 @@ void PrioridadePreemptivo(struct Processo *processos, int procCont, int seq)
         ++instante;
     }
 }
-
 
 // TODO -seq no FCFS nao serve pra nada
 void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
@@ -507,8 +508,9 @@ void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
         // nao tem preempção
         if (executando == NULL)
         {
-            //atual é nulo quando é a primeira execucao ou ele chegou no final da fila
-            if(atual == NULL){
+            // atual é nulo quando é a primeira execucao ou ele chegou no final da fila
+            if (atual == NULL)
+            {
                 atual = prontos;
             }
             executando = atual->proc;
@@ -564,8 +566,9 @@ void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
                 atual = atual->prox;
             }
 
-            if(q = quantum){
-                //se ja chegou no quantum tem q executar o proximo
+            if (q = quantum)
+            {
+                // se ja chegou no quantum tem q executar o proximo
                 executando = NULL;
                 atual = atual->prox;
             }
@@ -573,7 +576,6 @@ void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
         ++instante;
     }
 }
-
 
 int main(int argc, char *argv[])
 {
@@ -688,6 +690,9 @@ int main(int argc, char *argv[])
         }
         printf("\ncheegou");
         fflush(stdout);
+
+        // o nome é dado pela ordem de chegada, sem depender da leitura do arquivo
+        processos[i].indice = i;
     }
 
     // Codigo do strtok
