@@ -75,6 +75,8 @@ void removerLista(struct s_no **inicio, int x)
     if (*inicio == NULL)
     {
         // nada
+        printf("remocao do no");
+        fflush(stdout);
     }
     else if ((*inicio)->proc->indice == x)
     {
@@ -84,7 +86,6 @@ void removerLista(struct s_no **inicio, int x)
     }
     else
     {
-        // retira o elemento comparando os ponteiros, deve ser um mau habito
         struct s_no *p1 = *inicio, *p2;
         while (p1->proc->indice != x && p1->prox != NULL)
         {
@@ -99,11 +100,13 @@ void removerLista(struct s_no **inicio, int x)
             p1 = p1->prox;
             p2->prox = p1;
             // remove o no
-            free(temp);
+            // BUG ao fazer o free
+            // free(temp);
         }
         else
         {
-            perror("remocao do no");
+            printf("remocao do no");
+            fflush(stdout);
         }
     }
 }
@@ -583,7 +586,9 @@ void PrioridadePreemptivo(struct Processo *processos, int procCont, int seq)
                     // executa o pico de cpu
                     executando->cpu[executando->marcador]--;
                     printf("executando P%d", executando->indice);
-                    // ve se já terminou
+
+                    // TODO repeticao do codigo abaixo, deve ter uma forma melhor
+                    //  ve se já terminou
                     if (executando->cpu[executando->marcador] == 0)
                     {
                         // pula pro proximo pico de cpu
@@ -669,6 +674,7 @@ void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
     // honestamente, instante local faz mais sentido da forma como estou fazendo
     int instante = 0;
     int ocioso = 0;
+    int clock = 0;
     // assim nao vamos precisar sobrescrever nada no processos original
     struct Processo *proximos = processos;
     // cria inicio da lista de prontos
@@ -685,6 +691,7 @@ void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
     int q = 0;
     while (exec < procCont)
     {
+        printf("\ninstante %d", instante);
         for (int i = 0; i < procCont; i++)
         {
             // procura se um processo ficou pronto agora
@@ -699,33 +706,94 @@ void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
         // nao tem preempção
         if (executando == NULL)
         {
+            q = 0;
+
             // atual é nulo quando é a primeira execucao ou ele chegou no final da fila
             if (atual == NULL)
             {
                 atual = prontos;
             }
-            executando = atual->proc;
-
+            if (atual != NULL)
+            {
+                executando = atual->proc;
+            }
+            else
+            {
+                executando = NULL;
+            }
             if (executando == NULL)
             {
                 // se nao tem nenhum processo pronto, o programa fica ocioso
                 // TODO talvez colocar esse if la no final?
                 //[ ] executar ES tambem conta como cpu?
                 ++ocioso;
+                ++clock;
             }
             else
             {
+                // escrever no diagrama de gantt quanto tempo ficou ocioso
+                // TODO no primeiro é diferente
+                // se for 0 nao tem porque printar
+                if (clock > 0)
+                {
+                    printf("*** %d|", instante);
+                    clock = 0;
+                }
+                else
+                {
 
-                // executa o pico de cpu
-                // FIXME essa execução dupla pode dar erro
-                executando->cpu[executando->marcador]--;
-                q++;
+                    // executa o pico de cpu
+                    // so precisa disso se o ngc nao durou nada
+                    executando->cpu[executando->marcador]--;
+                    printf("executando P%d", executando->indice);
+                    q++;
+                    //++clock;
+                    // ve se já terminou
+                    if (executando->cpu[executando->marcador] == 0)
+                    {
+                        // pula pro proximo pico de cpu
+                        executando->marcador++;
+                        // se o proximo pico tambem for zero
+                        if (executando->cpu[executando->marcador] == 0)
+                        {
+                            // o processo já foi encerrado
+                            exec++;
+                            // marca com -1 pra ele não executar de novo
+                            executando->submissao = -1;
+                        }
+                        else
+                        {
+                            // ainda tem um proximo pico
+                            // [ ] sera que dá bom fazer assim? instante de submissao modificado
+                            // ele so fica pronto de novo quando acabar a execucao da ES dele
+                            executando->submissao = instante + executando->es[(executando->marcador) - 1];
+                        }
+                        // escrever no diagrama de gantt
+                        atual = atual->prox;
+                        printf("P%d %d| encerrado", executando->indice, instante);
+                        // [ ] remover o processo da lista de prontos?
+                        removerLista(&prontos, executando->indice);
+                        // vai ver qual é o proximo a executar
+                        executando = NULL;
+                        q = 0;
+                    }
+                    else if (q == quantum)
+                    {
+                        atual = atual->prox;
+                        // escrever no diagrama de gantt
+                        printf("P%d %d|", executando->indice, instante);
+                        // se ja chegou no quantum tem q executar o proximo
+                        executando = NULL;
+                        q = 0;
+                    }
+                }
             }
         }
         else
         {
             // executa o pico de cpu
             executando->cpu[executando->marcador]--;
+            printf("executando P%d", executando->indice);
             q++;
 
             // ve se já terminou
@@ -747,23 +815,28 @@ void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
                     // [ ] sera que dá bom fazer assim? instante de submissao modificado
                     // ele so fica pronto de novo quando acabar a execucao da ES dele
                     executando->submissao = instante + executando->es[(executando->marcador) - 1];
-                    // obviamente, isso só faz sentido se o executando conseguir mudar os proximos por referencia
                 }
+                // escrever no diagrama de gantt
+                atual = atual->prox;
+                printf("P%d %d| encerrado", executando->indice, instante);
                 // [ ] remover o processo da lista de prontos?
-                removerListaIni(&prontos);
+                removerLista(&prontos, executando->indice);
                 // vai ver qual é o proximo a executar
                 executando = NULL;
-                atual = atual->prox;
+                q = 0;
             }
-
-            if (q = quantum)
+            else if (q == quantum)
             {
+                atual = atual->prox;
+                // escrever no diagrama de gantt
+                printf("P%d %d|", executando->indice, instante);
                 // se ja chegou no quantum tem q executar o proximo
                 executando = NULL;
-                atual = atual->prox;
+                q = 0;
             }
         }
         ++instante;
+        sleep(1);
     }
 }
 
@@ -906,7 +979,8 @@ int main(int argc, char *argv[])
     // FCFS(processos, numProc, seq);
     // SJF(processos, numProc, seq);
     // SRTF(processos, numProc, seq);
-    PrioridadePreemptivo(processos, numProc, seq);
+    // PrioridadePreemptivo(processos, numProc, seq);
+    RoundRobin(processos, numProc, seq, quantum);
 
     strcat(entrada, ".out");
     FILE *saida = fopen(entrada, "w");
