@@ -246,6 +246,35 @@ void FCFS(struct Processo *processos, int procCont, int seq)
                     // so precisa disso se o ngc nao durou nada
                     executando->cpu[executando->marcador]--;
                     //++clock;
+                    // ve se já terminou
+                    if (executando->cpu[executando->marcador] == 0)
+                    {
+                        // pula pro proximo pico de cpu
+                        executando->marcador++;
+                        // se o proximo pico tambem for zero
+                        if (executando->cpu[executando->marcador] == 0)
+                        {
+                            // o processo já foi encerrado
+                            exec++;
+                            // marca com -1 pra ele não executar de novo
+                            executando->submissao = -1;
+                        }
+                        else
+                        {
+                            // ainda tem um proximo pico
+                            // [ ] sera que dá bom fazer assim? instante de submissao modificado
+                            // ele so fica pronto de novo quando acabar a execucao da ES dele
+                            executando->submissao = instante + executando->es[(executando->marcador) - 1];
+                            // obviamente, isso só faz sentido se o executando conseguir mudar os proximos por referencia
+                        }
+                        // escrever no diagrama de gantt
+                        printf("P%d %d|", executando->indice, instante);
+                        clock = 0;
+                        // [ ] remover o processo da lista de prontos?
+                        removerListaIni(&prontos);
+                        // vai ver qual é o proximo a executar
+                        executando = NULL;
+                    }
                 }
                 clock = 0;
 
@@ -363,6 +392,37 @@ void SJF(struct Processo *processos, int procCont, int seq)
                     // executa o pico de cpu
                     executando->cpu[executando->marcador]--;
                     //++clock;
+
+                    // ve se já terminou
+                    if (executando->cpu[executando->marcador] == 0)
+                    {
+                        // pula pro proximo pico de cpu
+                        executando->marcador++;
+                        // se o proximo pico tambem for zero
+                        if (executando->cpu[executando->marcador] == 0)
+                        {
+                            // o processo já foi encerrado
+                            exec++;
+                            // marca com -1 pra ele não executar de novo
+                            executando->submissao = -1;
+                        }
+                        else
+                        {
+                            // ainda tem um proximo pico
+                            // [ ] sera que dá bom fazer assim? instante de submissao modificado
+                            // ele so fica pronto de novo quando acabar a execucao da ES dele
+                            executando->submissao = instante + executando->es[(executando->marcador) - 1];
+                            // obviamente, isso só faz sentido se o executando conseguir mudar os proximos por referencia
+                        }
+
+                        // escrever no diagrama de gantt
+                        printf("P%d %d|", executando->indice, instante);
+                        clock = 0;
+                        // [ ] remover o processo da lista de prontos?
+                        removerLista(&prontos, executando->indice);
+                        // vai ver qual é o proximo a executar
+                        executando = NULL;
+                    }
                 }
                 clock = 0;
                 // printf("executando P%d", executando->indice);
@@ -474,6 +534,37 @@ void SRTF(struct Processo *processos, int procCont, int seq)
                     // executa o pico de cpu
                     executando->cpu[executando->marcador]--;
                     printf("executando P%d", executando->indice);
+
+                    // ve se já terminou
+                    if (executando->cpu[executando->marcador] == 0)
+                    {
+                        // pula pro proximo pico de cpu
+                        executando->marcador++;
+                        // se o proximo pico tambem for zero
+                        if (executando->cpu[executando->marcador] == 0)
+                        {
+                            // o processo já foi encerrado
+                            exec++;
+                            // marca com -1 pra ele não executar de novo
+                            executando->submissao = -1;
+                        }
+                        else
+                        {
+                            // ainda tem um proximo pico
+                            // [ ] sera que dá bom fazer assim? instante de submissao modificado
+                            // ele so fica pronto de novo quando acabar a execucao da ES dele
+                            executando->submissao = instante + executando->es[(executando->marcador) - 1];
+                            // obviamente, isso só faz sentido se o executando conseguir mudar os proximos por referencia
+                        }
+
+                        // escrever no diagrama de gantt
+                        printf("P%d %d|", executando->indice, instante);
+                        // clock = 0;
+                        //  [ ] remover o processo da lista de prontos?
+                        removerLista(&prontos, executando->indice);
+                        // vai ver qual é o proximo a executar
+                        executando = NULL;
+                    }
                 }
                 executando = novo;
             }
@@ -976,11 +1067,11 @@ int main(int argc, char *argv[])
         */
 
     // FIXME processos é passado por referencia, quer dizer que só uma funcao pode ser usada
-    // FCFS(processos, numProc, seq);
+     FCFS(processos, numProc, seq);
     // SJF(processos, numProc, seq);
     // SRTF(processos, numProc, seq);
     // PrioridadePreemptivo(processos, numProc, seq);
-    RoundRobin(processos, numProc, seq, quantum);
+    //RoundRobin(processos, numProc, seq, quantum);
 
     strcat(entrada, ".out");
     FILE *saida = fopen(entrada, "w");
