@@ -1,14 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-// XXX TESTE
-#include <unistd.h>
+#include <time.h>
 
 #define MAX_CPU 50
 #define MAX_PROC 50
 #define MAX_ARQV 100
 #define true 1
 #define false 0
+
+// unica variavel global
+FILE *saida;
 struct Processo
 {
     // o "nome" do processo
@@ -17,6 +19,9 @@ struct Processo
     int cpu[MAX_CPU];
     int es[MAX_CPU];
     int marcador;
+    // variaveis pra medir o tempo
+    clock_t turnaround, espera;
+    clock_t inicioEspera, fimEspera, inicioTurnaround;
 };
 
 // lista encadeada
@@ -75,7 +80,7 @@ void removerLista(struct s_no **inicio, int x)
     if (*inicio == NULL)
     {
         // nada
-        printf("remocao do no");
+        // printf("remocao do no");
         fflush(stdout);
     }
     else if ((*inicio)->proc->indice == x)
@@ -105,7 +110,7 @@ void removerLista(struct s_no **inicio, int x)
         }
         else
         {
-            printf("remocao do no");
+            // printf("remocao do no");
             fflush(stdout);
         }
     }
@@ -179,12 +184,12 @@ struct Processo *procurarPrioridade(struct s_no **inicio)
 // TODO -seq no FCFS nao serve pra nada
 void FCFS(struct Processo *processos, int procCont, int seq)
 {
-    printf("FCFS: ");
+    fprintf(saida, "\nFCFS: ");
     // honestamente, instante local faz mais sentido da forma como estou fazendo
     // instante é 1 né?
     int instante = 1;
     int ocioso = 0;
-    int clock = 0;
+    int tOcioso = 0;
     // assim nao vamos precisar sobrescrever nada no processos original
     struct Processo *proximos = processos;
     // cria inicio da lista de prontos
@@ -198,10 +203,17 @@ void FCFS(struct Processo *processos, int procCont, int seq)
     struct Processo *executando = NULL;
 
     int exec = 0;
+    clock_t inicio = clock();
+
+    for (int i = 0; i < procCont; i++)
+    {
+        // q tristeza, ja ocupa mto tempo
+        proximos[i].inicioEspera = clock();
+    }
     while (exec < procCont)
     {
-        //printf("\ninstante %d", instante);
-        //  para marcar no diagrama de gantt
+        // printf("\ninstante %d", instante);
+        //   para marcar no diagrama de gantt
         for (int i = 0; i < procCont; i++)
         {
             // procura se um processo ficou pronto agora
@@ -209,6 +221,11 @@ void FCFS(struct Processo *processos, int procCont, int seq)
             {
                 // coloca na fila de prontos
                 inserirLista(&prontos, &proximos[i]);
+                // ve se é aprimeira insercao
+                if (proximos[i].marcador == 0)
+                {
+                    proximos[i].inicioTurnaround = clock();
+                }
             }
         }
 
@@ -228,15 +245,17 @@ void FCFS(struct Processo *processos, int procCont, int seq)
                 // TODO talvez colocar esse if la no final?
                 // [ ] executar ES tambem conta como cpu?
                 ++ocioso;
-                ++clock;
+                ++tOcioso;
                 // printf("ocioso");
             }
             else
             {
+                executando->fimEspera = clock();
+                executando->espera += executando->fimEspera - executando->inicioEspera;
                 // escrever no diagrama de gantt quanto tempo ficou ocioso
                 // TODO no primeiro é diferente
                 // se for 0 nao tem porque printar
-                if (clock > 0)
+                if (tOcioso > 0)
                 {
                     printf("*** %d|", instante);
                 }
@@ -246,7 +265,7 @@ void FCFS(struct Processo *processos, int procCont, int seq)
                     // executa o pico de cpu
                     // so precisa disso se o ngc nao durou nada
                     executando->cpu[executando->marcador]--;
-                    //++clock;
+                    //++tOcioso;
                     // ve se já terminou
                     if (executando->cpu[executando->marcador] == 0)
                     {
@@ -259,6 +278,7 @@ void FCFS(struct Processo *processos, int procCont, int seq)
                             exec++;
                             // marca com -1 pra ele não executar de novo
                             executando->submissao = -1;
+                            executando->turnaround = clock();
                         }
                         else
                         {
@@ -273,14 +293,15 @@ void FCFS(struct Processo *processos, int procCont, int seq)
                         }
                         // escrever no diagrama de gantt
                         printf("P%d %d|", executando->indice, instante);
-                        clock = 0;
+                        tOcioso = 0;
                         // [ ] remover o processo da lista de prontos?
                         removerListaIni(&prontos);
+                        executando->inicioEspera = clock();
                         // vai ver qual é o proximo a executar
                         executando = NULL;
                     }
                 }
-                clock = 0;
+                tOcioso = 0;
 
                 // printf("executando P%d", executando->indice);
             }
@@ -291,7 +312,7 @@ void FCFS(struct Processo *processos, int procCont, int seq)
             // printf("executando P%d", executando->indice);
             // fflush(stdout);
             executando->cpu[executando->marcador]--;
-            ++clock;
+            ++tOcioso;
             // printf("+1");
 
             // ve se já terminou
@@ -320,7 +341,7 @@ void FCFS(struct Processo *processos, int procCont, int seq)
                 }
                 // escrever no diagrama de gantt
                 printf("P%d %d|", executando->indice, instante);
-                clock = 0;
+                tOcioso = 0;
                 // [ ] remover o processo da lista de prontos?
                 removerListaIni(&prontos);
                 // vai ver qual é o proximo a executar
@@ -334,18 +355,33 @@ void FCFS(struct Processo *processos, int procCont, int seq)
             --ES;
         }
     }
+    clock_t throughput = clock();
     // finalizar
     printf("\nUtilização da CPU: %d %%", (instante - ocioso) * 100 / instante);
+
+    clock_t turnaroundMedio = 0, esperaMedia = 0;
+
+    for (int i = 0; i < procCont; i++)
+    {
+        // BUG tempo negativo
+        printf("\nTurnaround de P%d: %lf", proximos[i].indice, (double)(proximos[i].turnaround - proximos[i].inicioTurnaround) / CLOCKS_PER_SEC);
+        printf("\nEspera de P%d: %lf", proximos[i].indice, (double)(proximos[i].espera) / CLOCKS_PER_SEC);
+        turnaroundMedio += (proximos[i].turnaround - proximos[i].inicioTurnaround);
+        esperaMedia += (proximos[i].espera);
+    }
+    printf("\nTurnAround medio: %lf", (double)(turnaroundMedio / procCont) / CLOCKS_PER_SEC);
+    printf("\nEspera media: %lf", ((double)(esperaMedia) / CLOCKS_PER_SEC) / procCont);
+    printf("\nThroughPut: %lf", ((double)(throughput - inicio) / CLOCKS_PER_SEC) / procCont);
 }
 
 // TODO -seq nao serve pra nada
 void SJF(struct Processo *processos, int procCont, int seq)
 {
-    printf("SJF: ");
+    printf("\nSJF: ");
     // honestamente, instante local faz mais sentido da forma como estou fazendo
     int instante = 0;
     int ocioso = 0;
-    int clock = 0;
+    int tOcioso = 0;
     // assim nao vamos precisar sobrescrever nada no processos original
     struct Processo *proximos = processos;
     // cria inicio da lista de prontos
@@ -359,6 +395,13 @@ void SJF(struct Processo *processos, int procCont, int seq)
     struct Processo *executando = NULL;
 
     int exec = 0;
+    clock_t inicio = clock();
+
+    for (int i = 0; i < procCont; i++)
+    {
+        // q tristeza, ja ocupa mto tempo
+        proximos[i].inicioEspera = clock();
+    }
     while (exec < procCont)
     {
         // printf("\ninstante %d", instante);
@@ -372,6 +415,11 @@ void SJF(struct Processo *processos, int procCont, int seq)
                 // printf("inseriu");
                 //  coloca na fila de prontos
                 inserirLista(&prontos, &proximos[i]);
+                // ve se é aprimeira insercao
+                if (proximos[i].marcador == 0)
+                {
+                    proximos[i].inicioTurnaround = clock();
+                }
             }
         }
 
@@ -389,14 +437,16 @@ void SJF(struct Processo *processos, int procCont, int seq)
                 // TODO talvez colocar esse if la no final?
                 //[ ] executar ES tambem conta como cpu?
                 ++ocioso;
-                ++clock;
+                ++tOcioso;
                 // printf("ocioso");
             }
             else
             {
+                executando->fimEspera = clock();
+                executando->espera += executando->fimEspera - executando->inicioEspera;
 
                 // se for 0 nao tem porque printars
-                if (clock > 0)
+                if (tOcioso > 0)
                 {
                     printf("*** %d|", instante);
                 }
@@ -405,7 +455,7 @@ void SJF(struct Processo *processos, int procCont, int seq)
 
                     // executa o pico de cpu
                     executando->cpu[executando->marcador]--;
-                    //++clock;
+                    //++tOcioso;
 
                     // ve se já terminou
                     if (executando->cpu[executando->marcador] == 0)
@@ -419,6 +469,7 @@ void SJF(struct Processo *processos, int procCont, int seq)
                             exec++;
                             // marca com -1 pra ele não executar de novo
                             executando->submissao = -1;
+                            executando->turnaround = clock();
                         }
                         else
                         {
@@ -434,14 +485,15 @@ void SJF(struct Processo *processos, int procCont, int seq)
 
                         // escrever no diagrama de gantt
                         printf("P%d %d|", executando->indice, instante);
-                        clock = 0;
+                        tOcioso = 0;
                         // [ ] remover o processo da lista de prontos?
                         removerLista(&prontos, executando->indice);
+                        executando->inicioEspera = clock();
                         // vai ver qual é o proximo a executar
                         executando = NULL;
                     }
                 }
-                clock = 0;
+                tOcioso = 0;
                 // printf("executando P%d", executando->indice);
             }
         }
@@ -450,7 +502,7 @@ void SJF(struct Processo *processos, int procCont, int seq)
             // executa o pico de cpu
             // printf("executando P%d", executando->indice);
             executando->cpu[executando->marcador]--;
-            ++clock;
+            ++tOcioso;
 
             // ve se já terminou
             if (executando->cpu[executando->marcador] == 0)
@@ -479,7 +531,7 @@ void SJF(struct Processo *processos, int procCont, int seq)
 
                 // escrever no diagrama de gantt
                 printf("P%d %d|", executando->indice, instante);
-                clock = 0;
+                tOcioso = 0;
                 // [ ] remover o processo da lista de prontos?
                 removerLista(&prontos, executando->indice);
                 // vai ver qual é o proximo a executar
@@ -494,18 +546,33 @@ void SJF(struct Processo *processos, int procCont, int seq)
         }
         // sleep(1);
     }
+    clock_t throughput = clock();
     // finalizar
     printf("\nUtilização da CPU: %d %%", (instante - ocioso) * 100 / instante);
+
+    clock_t turnaroundMedio = 0, esperaMedia = 0;
+
+    for (int i = 0; i < procCont; i++)
+    {
+        // BUG tempo negativo
+        printf("\nTurnaround de P%d: %lf", proximos[i].indice, (double)(proximos[i].turnaround - proximos[i].inicioTurnaround) / CLOCKS_PER_SEC);
+        printf("\nEspera de P%d: %lf", proximos[i].indice, (double)(proximos[i].espera) / CLOCKS_PER_SEC);
+        turnaroundMedio += (proximos[i].turnaround - proximos[i].inicioTurnaround);
+        esperaMedia += (proximos[i].espera);
+    }
+    printf("\nTurnAround medio: %lf", (double)(turnaroundMedio / procCont) / CLOCKS_PER_SEC);
+    printf("\nEspera media: %lf", ((double)(esperaMedia) / CLOCKS_PER_SEC) / procCont);
+    printf("\nThroughPut: %lf", ((double)(throughput - inicio) / CLOCKS_PER_SEC) / procCont);
 }
 
 // TODO -seq nao serve pra nada
 void SRTF(struct Processo *processos, int procCont, int seq)
 {
-    printf("SRTF: ");
+    fprintf(saida,"\nSRTF: ");
     // honestamente, instante local faz mais sentido da forma como estou fazendo
     int instante = 0;
     int ocioso = 0;
-    int clock = 0;
+    int tOcioso = 0;
     // assim nao vamos precisar sobrescrever nada no processos original
     struct Processo *proximos = processos;
     // cria inicio da lista de prontos
@@ -519,20 +586,32 @@ void SRTF(struct Processo *processos, int procCont, int seq)
     struct Processo *executando = NULL;
 
     int exec = 0;
+    clock_t inicio = clock();
+
+    for (int i = 0; i < procCont; i++)
+    {
+        // q tristeza, ja ocupa mto tempo
+        proximos[i].inicioEspera = clock();
+    }
     while (exec < procCont)
     {
         // jeito bem anta de se arrumar
         int flag = 0;
         // executando = NULL;
-        printf("\ninstante %d", instante);
+        // fprintf(saida,"\ninstante %d", instante);
         for (int i = 0; i < procCont; i++)
         {
             // procura se um processo ficou pronto agora
             if (proximos[i].submissao == instante)
             {
-                // printf("inseriu P%d",proximos[i].indice);
+                // fprintf(saida,"inseriu P%d",proximos[i].indice);
                 //  coloca na fila de prontos
                 inserirLista(&prontos, &proximos[i]);
+                // ve se é aprimeira insercao
+                if (proximos[i].marcador == 0)
+                {
+                    proximos[i].inicioTurnaround = clock();
+                }
             }
         }
         // pelo jeito que o programa é formatado, precisa disso daqui
@@ -547,21 +626,23 @@ void SRTF(struct Processo *processos, int procCont, int seq)
 
             // se nao tem nenhum processo pronto, o programa fica ocioso
             ++ocioso;
-            ++clock;
+            ++tOcioso;
         }
         else
         {
+            executando->fimEspera = clock();
+            executando->espera += executando->fimEspera - executando->inicioEspera;
             if (novo != executando)
             {
                 // se o processo terminou ou foi interrompido
                 if (executando != NULL)
                 // se um processo foi interrompido
                 {
-                    printf("P%d %d| interrompido", executando->indice, instante);
+                    fprintf(saida,"P%d %d| interrompido", executando->indice, instante);
                     flag = 1;
                     // executa o pico de cpu
                     executando->cpu[executando->marcador]--;
-                    printf("executando P%d", executando->indice);
+                    fprintf(saida,"executando P%d", executando->indice);
 
                     // ve se já terminou
                     if (executando->cpu[executando->marcador] == 0)
@@ -575,6 +656,7 @@ void SRTF(struct Processo *processos, int procCont, int seq)
                             exec++;
                             // marca com -1 pra ele não executar de novo
                             executando->submissao = -1;
+                            executando->turnaround = clock();
                         }
                         else
                         {
@@ -589,29 +671,30 @@ void SRTF(struct Processo *processos, int procCont, int seq)
                         }
 
                         // escrever no diagrama de gantt
-                        printf("P%d %d|", executando->indice, instante);
-                        // clock = 0;
+                        fprintf(saida,"P%d %d|", executando->indice, instante);
+                        // tOcioso = 0;
                         //  [ ] remover o processo da lista de prontos?
                         removerLista(&prontos, executando->indice);
+                        executando->inicioEspera = clock();
                         // vai ver qual é o proximo a executar
                         executando = NULL;
                     }
                 }
                 executando = novo;
             }
-            if (clock > 0)
+            if (tOcioso > 0)
             {
                 // se ficou um tempo ocioso
-                //  esse clock é apenas para ocioso
+                //  esse tOcioso é apenas para ocioso
 
-                printf("*** %d|", instante);
-                clock = 0;
+                fprintf(saida,"*** %d|", instante);
+                tOcioso = 0;
             }
             else if (!flag)
             {
                 // executa o pico de cpu
                 executando->cpu[executando->marcador]--;
-                printf("executando P%d", executando->indice);
+                fprintf(saida,"executando P%d", executando->indice);
 
                 // ve se já terminou
                 if (executando->cpu[executando->marcador] == 0)
@@ -639,8 +722,8 @@ void SRTF(struct Processo *processos, int procCont, int seq)
                     }
 
                     // escrever no diagrama de gantt
-                    printf("P%d %d|", executando->indice, instante);
-                    // clock = 0;
+                    fprintf(saida,"P%d %d|", executando->indice, instante);
+                    // tOcioso = 0;
                     //  [ ] remover o processo da lista de prontos?
                     removerLista(&prontos, executando->indice);
                     // vai ver qual é o proximo a executar
@@ -654,8 +737,23 @@ void SRTF(struct Processo *processos, int procCont, int seq)
             --ES;
         }
     }
+    clock_t throughput = clock();
     // finalizar
-    printf("\nUtilização da CPU: %d %%", (instante - ocioso) * 100 / instante);
+    fprintf(saida,"\nUtilização da CPU: %d %%", (instante - ocioso) * 100 / instante);
+
+    clock_t turnaroundMedio = 0, esperaMedia = 0;
+
+    for (int i = 0; i < procCont; i++)
+    {
+        // BUG tempo negativo
+        fprintf(saida,"\nTurnaround de P%d: %lf", proximos[i].indice, (double)(proximos[i].turnaround - proximos[i].inicioTurnaround) / CLOCKS_PER_SEC);
+        fprintf(saida,"\nEspera de P%d: %lf", proximos[i].indice, (double)(proximos[i].espera) / CLOCKS_PER_SEC);
+        turnaroundMedio += (proximos[i].turnaround - proximos[i].inicioTurnaround);
+        esperaMedia += (proximos[i].espera);
+    }
+    fprintf(saida,"\nTurnAround medio: %lf", (double)(turnaroundMedio / procCont) / CLOCKS_PER_SEC);
+    fprintf(saida,"\nEspera media: %lf", ((double)(esperaMedia) / CLOCKS_PER_SEC) / procCont);
+    fprintf(saida,"\nThroughPut: %lf", ((double)(throughput - inicio) / CLOCKS_PER_SEC) / procCont);
 }
 
 // TODO -seq nao serve pra nada
@@ -664,7 +762,7 @@ void PrioridadePreemptivo(struct Processo *processos, int procCont, int seq)
     // honestamente, instante local faz mais sentido da forma como estou fazendo
     int instante = 0;
     int ocioso = 0;
-    int clock = 0;
+    int tOcioso = 0;
     // assim nao vamos precisar sobrescrever nada no processos original
     struct Processo *proximos = processos;
     // cria inicio da lista de prontos
@@ -678,19 +776,32 @@ void PrioridadePreemptivo(struct Processo *processos, int procCont, int seq)
     struct Processo *executando = NULL;
 
     int exec = 0;
+    clock_t inicio = clock();
+    ffprintf(saida,saida,"\nPrioridadePreemptivo: ");
+
+    for (int i = 0; i < procCont; i++)
+    {
+        // q tristeza, ja ocupa mto tempo
+        proximos[i].inicioEspera = clock();
+    }
     while (exec < procCont)
     {
         // jeito bem anta de se arrumar
         int flag = 0;
-        printf("\ninstante %d", instante);
+        // fprintf(saida,"\ninstante %d", instante);
         for (int i = 0; i < procCont; i++)
         {
             // procura se um processo ficou pronto agora
             if (proximos[i].submissao == instante)
             {
-                // printf("inseriu P%d",proximos[i].indice);
+                // fprintf(saida,"inseriu P%d",proximos[i].indice);
                 //  coloca na fila de prontos
                 inserirLista(&prontos, &proximos[i]);
+                // ve se é aprimeira insercao
+                if (proximos[i].marcador == 0)
+                {
+                    proximos[i].inicioTurnaround = clock();
+                }
             }
         }
 
@@ -703,21 +814,23 @@ void PrioridadePreemptivo(struct Processo *processos, int procCont, int seq)
 
             // se nao tem nenhum processo pronto, o programa fica ocioso
             ++ocioso;
-            ++clock;
+            ++tOcioso;
         }
         else
         {
+            executando->fimEspera = clock();
+            executando->espera += executando->fimEspera - executando->inicioEspera;
             if (novo != executando)
             {
                 // se o processo terminou ou foi interrompido
                 if (executando != NULL)
                 // se um processo foi interrompido
                 {
-                    printf("P%d %d| interrompido", executando->indice, instante);
+                    fprintf(saida,"P%d %d|", executando->indice, instante);
                     flag = 1;
                     // executa o pico de cpu
                     executando->cpu[executando->marcador]--;
-                    printf("executando P%d", executando->indice);
+                    // fprintf(saida,"executando P%d", executando->indice);
 
                     // TODO repeticao do codigo abaixo, deve ter uma forma melhor
                     //  ve se já terminou
@@ -739,34 +852,35 @@ void PrioridadePreemptivo(struct Processo *processos, int procCont, int seq)
                             // [ ] sera que dá bom fazer assim? instante de submissao modificado
                             // ele so fica pronto de novo quando acabar a execucao da ES dele
                             executando->submissao = ES + instante + executando->es[(executando->marcador) - 1];
-                        if (seq)
-                        {
-                            ES += executando->es[(executando->marcador) - 1];
-                        }
+                            if (seq)
+                            {
+                                ES += executando->es[(executando->marcador) - 1];
+                            }
                         }
                         // escrever no diagrama de gantt
-                        printf("P%d %d|", executando->indice, instante);
+                        fprintf(saida,"P%d %d|", executando->indice, instante);
                         // [ ] remover o processo da lista de prontos?
                         removerLista(&prontos, executando->indice);
+                        executando->inicioEspera = clock();
                         // vai ver qual é o proximo a executar
                         executando = NULL;
                     }
                 }
                 executando = novo;
             }
-            if (clock > 0)
+            if (tOcioso > 0)
             {
                 // se ficou um tempo ocioso
-                //  esse clock é apenas para ocioso
+                //  esse tOcioso é apenas para ocioso
 
-                printf("*** %d|", instante);
-                clock = 0;
+                fprintf(saida,"*** %d|", instante);
+                tOcioso = 0;
             }
             else if (!flag)
             {
                 // executa o pico de cpu
                 executando->cpu[executando->marcador]--;
-                printf("executando P%d", executando->indice);
+                // fprintf(saida,"executando P%d", executando->indice);
 
                 // ve se já terminou
                 if (executando->cpu[executando->marcador] == 0)
@@ -792,7 +906,7 @@ void PrioridadePreemptivo(struct Processo *processos, int procCont, int seq)
                         }
                     }
                     // escrever no diagrama de gantt
-                    printf("P%d %d|", executando->indice, instante);
+                    fprintf(saida,"P%d %d|", executando->indice, instante);
                     // [ ] remover o processo da lista de prontos?
                     removerLista(&prontos, executando->indice);
                     // vai ver qual é o proximo a executar
@@ -806,18 +920,35 @@ void PrioridadePreemptivo(struct Processo *processos, int procCont, int seq)
             --ES;
         }
     }
+
+    clock_t throughput = clock();
     // finalizar
-    printf("\nUtilização da CPU: %d %%", (instante - ocioso) * 100 / instante);
+    fprintf(saida,"\nUtilização da CPU: %d %%", (instante - ocioso) * 100 / instante);
+
+    clock_t turnaroundMedio = 0, esperaMedia = 0;
+
+    for (int i = 0; i < procCont; i++)
+    {
+        // BUG tempo negativo
+        fprintf(saida,"\nTurnaround de P%d: %lf", proximos[i].indice, (double)(proximos[i].turnaround - proximos[i].inicioTurnaround) / CLOCKS_PER_SEC);
+        fprintf(saida,"\nEspera de P%d: %lf", proximos[i].indice, (double)(proximos[i].espera) / CLOCKS_PER_SEC);
+        turnaroundMedio += (proximos[i].turnaround - proximos[i].inicioTurnaround);
+        esperaMedia += (proximos[i].espera);
+    }
+    fprintf(saida,"\nTurnAround medio: %lf", (double)(turnaroundMedio / procCont) / CLOCKS_PER_SEC);
+    fprintf(saida,"\nEspera media: %lf", ((double)(esperaMedia) / CLOCKS_PER_SEC) / procCont);
+    fprintf(saida,"\nThroughPut: %lf", ((double)(throughput - inicio) / CLOCKS_PER_SEC) / procCont);
 }
 // HACK agora que penso, dá pra fazer -seq com apenas um numero:
 // vc vai adicionando os tempos de ES nele, e sempre q for recolocar o processo em espera vc adiciona esse numero no tempo de submissao
 //  TODO -seq no FCFS nao serve pra nada
+
 void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
 {
     // honestamente, instante local faz mais sentido da forma como estou fazendo
     int instante = 0;
     int ocioso = 0;
-    int clock = 0;
+    int tOcioso = 0;
     // assim nao vamos precisar sobrescrever nada no processos original
     struct Processo *proximos = processos;
     // cria inicio da lista de prontos
@@ -833,9 +964,16 @@ void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
 
     int exec = 0;
     int q = 0;
+    clock_t inicio = clock();
+
+    for (int i = 0; i < procCont; i++)
+    {
+        // q tristeza, ja ocupa mto tempo
+        proximos[i].inicioEspera = clock();
+    }
     while (exec < procCont)
     {
-        printf("\ninstante %d", instante);
+        // fprintf(saida,"\ninstante %d", instante);
         for (int i = 0; i < procCont; i++)
         {
             // procura se um processo ficou pronto agora
@@ -843,6 +981,11 @@ void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
             {
                 // coloca na fila de prontos
                 inserirLista(&prontos, &proximos[i]);
+                // ve se é aprimeira insercao
+                if (proximos[i].marcador == 0)
+                {
+                    proximos[i].inicioTurnaround = clock();
+                }
             }
         }
 
@@ -871,17 +1014,17 @@ void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
                 // TODO talvez colocar esse if la no final?
                 //[ ] executar ES tambem conta como cpu?
                 ++ocioso;
-                ++clock;
+                ++tOcioso;
             }
             else
             {
                 // escrever no diagrama de gantt quanto tempo ficou ocioso
                 // TODO no primeiro é diferente
                 // se for 0 nao tem porque printar
-                if (clock > 0)
+                if (tOcioso > 0)
                 {
-                    printf("*** %d|", instante);
-                    clock = 0;
+                    fprintf(saida,"*** %d|", instante);
+                    tOcioso = 0;
                 }
                 else
                 {
@@ -889,9 +1032,8 @@ void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
                     // executa o pico de cpu
                     // so precisa disso se o ngc nao durou nada
                     executando->cpu[executando->marcador]--;
-                    printf("executando P%d", executando->indice);
                     q++;
-                    //++clock;
+                    //++tOcioso;
                     // ve se já terminou
                     if (executando->cpu[executando->marcador] == 0)
                     {
@@ -918,7 +1060,7 @@ void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
                         }
                         // escrever no diagrama de gantt
                         atual = atual->prox;
-                        printf("P%d %d| encerrado", executando->indice, instante);
+                        fprintf(saida,"P%d %d|", executando->indice, instante);
                         // [ ] remover o processo da lista de prontos?
                         removerLista(&prontos, executando->indice);
                         // vai ver qual é o proximo a executar
@@ -929,7 +1071,7 @@ void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
                     {
                         atual = atual->prox;
                         // escrever no diagrama de gantt
-                        printf("P%d %d|", executando->indice, instante);
+                        fprintf(saida,"P%d %d|", executando->indice, instante);
                         // se ja chegou no quantum tem q executar o proximo
                         executando = NULL;
                         q = 0;
@@ -939,9 +1081,11 @@ void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
         }
         else
         {
+            executando->fimEspera = clock();
+            executando->espera += executando->fimEspera - executando->inicioEspera;
+
             // executa o pico de cpu
             executando->cpu[executando->marcador]--;
-            printf("executando P%d", executando->indice);
             q++;
 
             // ve se já terminou
@@ -956,6 +1100,7 @@ void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
                     exec++;
                     // marca com -1 pra ele não executar de novo
                     executando->submissao = -1;
+                    executando->turnaround = clock();
                 }
                 else
                 {
@@ -970,9 +1115,10 @@ void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
                 }
                 // escrever no diagrama de gantt
                 atual = atual->prox;
-                printf("P%d %d| encerrado", executando->indice, instante);
+                fprintf(saida,"P%d %d|", executando->indice, instante);
                 // [ ] remover o processo da lista de prontos?
                 removerLista(&prontos, executando->indice);
+                executando->inicioEspera = clock();
                 // vai ver qual é o proximo a executar
                 executando = NULL;
                 q = 0;
@@ -981,7 +1127,7 @@ void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
             {
                 atual = atual->prox;
                 // escrever no diagrama de gantt
-                printf("P%d %d|", executando->indice, instante);
+                fprintf(saida,"P%d %d|", executando->indice, instante);
                 // se ja chegou no quantum tem q executar o proximo
                 executando = NULL;
                 q = 0;
@@ -993,8 +1139,23 @@ void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
             --ES;
         }
     }
+    clock_t throughput = clock();
     // finalizar
-    printf("\nUtilização da CPU: %d %%", (instante - ocioso) * 100 / instante);
+    fprintf(saida,"\nUtilização da CPU: %d %%", (instante - ocioso) * 100 / instante);
+
+    clock_t turnaroundMedio = 0, esperaMedia = 0;
+
+    for (int i = 0; i < procCont; i++)
+    {
+        // BUG tempo negativo
+        fprintf(saida,"\nTurnaround de P%d: %lf", proximos[i].indice, (double)(proximos[i].turnaround - proximos[i].inicioTurnaround) / CLOCKS_PER_SEC);
+        fprintf(saida,"\nEspera de P%d: %lf", proximos[i].indice, (double)(proximos[i].espera) / CLOCKS_PER_SEC);
+        turnaroundMedio += (proximos[i].turnaround - proximos[i].inicioTurnaround);
+        esperaMedia += (proximos[i].espera);
+    }
+    fprintf(saida,"\nTurnAround medio: %lf", (double)(turnaroundMedio / procCont) / CLOCKS_PER_SEC);
+    fprintf(saida,"\nEspera media: %lf", ((double)(esperaMedia) / CLOCKS_PER_SEC) / procCont);
+    fprintf(saida,"\nThroughPut: %lf", ((double)(throughput - inicio) / CLOCKS_PER_SEC) / procCont);
 }
 
 int main(int argc, char *argv[])
@@ -1120,18 +1281,38 @@ int main(int argc, char *argv[])
         //+1 pra ficar como no do fabricio
         processos[i].indice = i + 1;
     }
+    strcat(entrada, ".out");
+    saida = fopen(entrada, "w");
 
     // Codigo do strtok
+    struct Processo temp[50];
+    for (int i = 0; i < numProc; i++)
+    {
+        temp[i] = processos[i];
+    }
 
-    // FIXME processos é passado por referencia, quer dizer que só uma funcao pode ser usada
-    FCFS(processos, numProc, seq);
-    // SJF(processos, numProc, seq);
-    // SRTF(processos, numProc, seq);
-    // PrioridadePreemptivo(processos, numProc, seq);
-    // RoundRobin(processos, numProc, seq, quantum);
+    FCFS(temp, numProc, seq);
+    for (int i = 0; i < numProc; i++)
+    {
+        temp[i] = processos[i];
+    }
+    SJF(temp, numProc, seq);
+    for (int i = 0; i < numProc; i++)
+    {
+        temp[i] = processos[i];
+    }
+    SRTF(temp, numProc, seq);
 
-    strcat(entrada, ".out");
-    FILE *saida = fopen(entrada, "w");
+    for (int i = 0; i < numProc; i++)
+    {
+        temp[i] = processos[i];
+    }
+    PrioridadePreemptivo(temp, numProc, seq);
+    for (int i = 0; i < numProc; i++)
+    {
+        temp[i] = processos[i];
+    }
+    RoundRobin(temp, numProc, seq, quantum);
 
     fclose(arqv);
     fclose(saida);
