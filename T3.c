@@ -200,7 +200,7 @@ void FCFS(struct Processo *processos, int procCont, int seq)
     int exec = 0;
     while (exec < procCont)
     {
-        printf("\ninstante %d", instante);
+        //printf("\ninstante %d", instante);
         //  para marcar no diagrama de gantt
         for (int i = 0; i < procCont; i++)
         {
@@ -265,8 +265,11 @@ void FCFS(struct Processo *processos, int procCont, int seq)
                             // ainda tem um proximo pico
                             // [ ] sera que dá bom fazer assim? instante de submissao modificado
                             // ele so fica pronto de novo quando acabar a execucao da ES dele
-                            executando->submissao = instante + executando->es[(executando->marcador) - 1];
-                            // obviamente, isso só faz sentido se o executando conseguir mudar os proximos por referencia
+                            executando->submissao = ES + instante + executando->es[(executando->marcador) - 1];
+                            if (seq)
+                            {
+                                ES += executando->es[(executando->marcador) - 1];
+                            }
                         }
                         // escrever no diagrama de gantt
                         printf("P%d %d|", executando->indice, instante);
@@ -309,11 +312,11 @@ void FCFS(struct Processo *processos, int procCont, int seq)
                     // ainda tem um proximo pico
                     // [ ] sera que dá bom fazer assim? instante de submissao modificado
                     // ele so fica pronto de novo quando acabar a execucao da ES dele
+                    executando->submissao = ES + instante + executando->es[(executando->marcador) - 1];
                     if (seq)
                     {
                         ES += executando->es[(executando->marcador) - 1];
                     }
-                    executando->submissao = ES + instante + executando->es[(executando->marcador) - 1];
                 }
                 // escrever no diagrama de gantt
                 printf("P%d %d|", executando->indice, instante);
@@ -332,7 +335,7 @@ void FCFS(struct Processo *processos, int procCont, int seq)
         }
     }
     // finalizar
-    printf("\nUtilização da CPU: %d por cento", (instante - ocioso) * 100 / instante);
+    printf("\nUtilização da CPU: %d %%", (instante - ocioso) * 100 / instante);
 }
 
 // TODO -seq nao serve pra nada
@@ -422,8 +425,11 @@ void SJF(struct Processo *processos, int procCont, int seq)
                             // ainda tem um proximo pico
                             // [ ] sera que dá bom fazer assim? instante de submissao modificado
                             // ele so fica pronto de novo quando acabar a execucao da ES dele
-                            executando->submissao = instante + executando->es[(executando->marcador) - 1];
-                            // obviamente, isso só faz sentido se o executando conseguir mudar os proximos por referencia
+                            executando->submissao = ES + instante + executando->es[(executando->marcador) - 1];
+                            if (seq)
+                            {
+                                ES += executando->es[(executando->marcador) - 1];
+                            }
                         }
 
                         // escrever no diagrama de gantt
@@ -464,11 +470,11 @@ void SJF(struct Processo *processos, int procCont, int seq)
                     // ainda tem um proximo pico
                     // [ ] sera que dá bom fazer assim? instante de submissao modificado
                     // ele so fica pronto de novo quando acabar a execucao da ES dele
+                    executando->submissao = ES + instante + executando->es[(executando->marcador) - 1];
                     if (seq)
                     {
                         ES += executando->es[(executando->marcador) - 1];
                     }
-                    executando->submissao = ES + instante + executando->es[(executando->marcador) - 1];
                 }
 
                 // escrever no diagrama de gantt
@@ -489,7 +495,7 @@ void SJF(struct Processo *processos, int procCont, int seq)
         // sleep(1);
     }
     // finalizar
-    printf("\nUtilização da CPU: %d por cento", (instante - ocioso) * 100 / instante);
+    printf("\nUtilização da CPU: %d %%", (instante - ocioso) * 100 / instante);
 }
 
 // TODO -seq nao serve pra nada
@@ -575,8 +581,11 @@ void SRTF(struct Processo *processos, int procCont, int seq)
                             // ainda tem um proximo pico
                             // [ ] sera que dá bom fazer assim? instante de submissao modificado
                             // ele so fica pronto de novo quando acabar a execucao da ES dele
-                            executando->submissao = instante + executando->es[(executando->marcador) - 1];
-                            // obviamente, isso só faz sentido se o executando conseguir mudar os proximos por referencia
+                            executando->submissao = ES + instante + executando->es[(executando->marcador) - 1];
+                            if (seq)
+                            {
+                                ES += executando->es[(executando->marcador) - 1];
+                            }
                         }
 
                         // escrever no diagrama de gantt
@@ -622,11 +631,11 @@ void SRTF(struct Processo *processos, int procCont, int seq)
                         // ainda tem um proximo pico
                         // [ ] sera que dá bom fazer assim? instante de submissao modificado
                         // ele so fica pronto de novo quando acabar a execucao da ES dele
+                        executando->submissao = ES + instante + executando->es[(executando->marcador) - 1];
                         if (seq)
                         {
                             ES += executando->es[(executando->marcador) - 1];
                         }
-                        executando->submissao = ES + instante + executando->es[(executando->marcador) - 1];
                     }
 
                     // escrever no diagrama de gantt
@@ -646,7 +655,7 @@ void SRTF(struct Processo *processos, int procCont, int seq)
         }
     }
     // finalizar
-    printf("\nUtilização da CPU: %d por cento", (instante - ocioso) * 100 / instante);
+    printf("\nUtilização da CPU: %d %%", (instante - ocioso) * 100 / instante);
 }
 
 // TODO -seq nao serve pra nada
@@ -729,8 +738,11 @@ void PrioridadePreemptivo(struct Processo *processos, int procCont, int seq)
                             // ainda tem um proximo pico
                             // [ ] sera que dá bom fazer assim? instante de submissao modificado
                             // ele so fica pronto de novo quando acabar a execucao da ES dele
-                            executando->submissao = instante + executando->es[(executando->marcador) - 1];
-                            // obviamente, isso só faz sentido se o executando conseguir mudar os proximos por referencia
+                            executando->submissao = ES + instante + executando->es[(executando->marcador) - 1];
+                        if (seq)
+                        {
+                            ES += executando->es[(executando->marcador) - 1];
+                        }
                         }
                         // escrever no diagrama de gantt
                         printf("P%d %d|", executando->indice, instante);
@@ -773,11 +785,11 @@ void PrioridadePreemptivo(struct Processo *processos, int procCont, int seq)
                     {
                         // ainda tem um proximo pico
                         // ele so fica pronto de novo quando acabar a execucao da ES dele
+                        executando->submissao = ES + instante + executando->es[(executando->marcador) - 1];
                         if (seq)
                         {
                             ES += executando->es[(executando->marcador) - 1];
                         }
-                        executando->submissao = ES + instante + executando->es[(executando->marcador) - 1];
                     }
                     // escrever no diagrama de gantt
                     printf("P%d %d|", executando->indice, instante);
@@ -795,7 +807,7 @@ void PrioridadePreemptivo(struct Processo *processos, int procCont, int seq)
         }
     }
     // finalizar
-    printf("\nUtilização da CPU: %d por cento", (instante - ocioso) * 100 / instante);
+    printf("\nUtilização da CPU: %d %%", (instante - ocioso) * 100 / instante);
 }
 // HACK agora que penso, dá pra fazer -seq com apenas um numero:
 // vc vai adicionando os tempos de ES nele, e sempre q for recolocar o processo em espera vc adiciona esse numero no tempo de submissao
@@ -898,11 +910,11 @@ void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
                             // ainda tem um proximo pico
                             // [ ] sera que dá bom fazer assim? instante de submissao modificado
                             // ele so fica pronto de novo quando acabar a execucao da ES dele
+                            executando->submissao = ES + instante + executando->es[(executando->marcador) - 1];
                             if (seq)
                             {
                                 ES += executando->es[(executando->marcador) - 1];
                             }
-                            executando->submissao = ES + instante + executando->es[(executando->marcador) - 1];
                         }
                         // escrever no diagrama de gantt
                         atual = atual->prox;
@@ -950,11 +962,11 @@ void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
                     // ainda tem um proximo pico
                     // [ ] sera que dá bom fazer assim? instante de submissao modificado
                     // ele so fica pronto de novo quando acabar a execucao da ES dele
+                    executando->submissao = ES + instante + executando->es[(executando->marcador) - 1];
                     if (seq)
                     {
                         ES += executando->es[(executando->marcador) - 1];
                     }
-                    executando->submissao = ES + instante + executando->es[(executando->marcador) - 1];
                 }
                 // escrever no diagrama de gantt
                 atual = atual->prox;
@@ -982,12 +994,12 @@ void RoundRobin(struct Processo *processos, int procCont, int seq, int quantum)
         }
     }
     // finalizar
-    printf("\nUtilização da CPU: %d por cento", (instante - ocioso) * 100 / instante);
+    printf("\nUtilização da CPU: %d %%", (instante - ocioso) * 100 / instante);
 }
 
 int main(int argc, char *argv[])
 {
-    if (argc < 3)
+    if (argc < 3 || argc > 4)
     {
         printf("\nquantidade de argumentos inválida");
         printf("\nEscreva: nome do programa - nome do arquivo a ser lido - numero de quantum - sequencial ou nao");
@@ -1110,15 +1122,6 @@ int main(int argc, char *argv[])
     }
 
     // Codigo do strtok
-
-    /*
-    for (int i = 0; i < numProc; i++)
-    {
-        printf("\nprocesso %d", i);
-        printf("\n %d %d %d %d %d", processos[i].prioridade, processos[i].submissao, processos[i].cpu[0], processos[i].es[0], processos[i].cpu[1]);
-        fflush(stdout);
-    }
-        */
 
     // FIXME processos é passado por referencia, quer dizer que só uma funcao pode ser usada
     FCFS(processos, numProc, seq);
