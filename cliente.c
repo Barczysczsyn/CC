@@ -73,6 +73,7 @@ void funcao_filhos(int num_filhos)
     sleep(1); // 1 segundo
     printf("\nfilho #%i mandou %i caracteres", num_filhos, send(sock, buffer, strlen(buffer), 0));
     sleep(1);
+    //FIXME funcao filhos retorna void porra
     printf("\nfilho #%i recebeu %i caracteres", funcao_filhos, recv(sock, buffer, 25, 0));
     sleep(1);
     close(sock);

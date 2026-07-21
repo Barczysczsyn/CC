@@ -1,16 +1,23 @@
-// servidor usando multiplexacao
+// servidor de processo
+// este servidor utiliza a funcao fork para gerenciar multiplos clientes
+// Ao se fazer a chamada de sistema fork(), cria-se uma duplicata exata do programa, e um novo processo filho é iniciado para essa cópia
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/ioctl.h> //funcoes de entrada e saida de alto nivel
+#include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+// a biblioteca sys/wait e signal sao necessarias para evitar a criação de zombies
+// zombies são processos filhos que aparecem quando processos pais deixam de existir sem ser feita a chamada wait ou waitpid dos filhos
+#include <sys/wait.h>
+#include <signal.h>
 
 #define true 1
-#define MAX_NOME 25
+
+#define MAX_NOME 50
 #define MAX_STRING 100
 
 // lista encadeada de pacientes
@@ -20,6 +27,27 @@ struct Paciente
     int id;
     struct Paciente *prox;
 };
+struct Usuario
+{
+    char nome[MAX_NOME];
+    char senha[MAX_NOME];
+};
+
+// funcao pra encapsular recebimento de mensagens
+void receber(int socket, char *buffer)
+{
+    int leitor = recv(socket, buffer, strlen(buffer), 0);
+    if (leitor <= 0)
+    {
+        perror("receber");
+    }
+    else
+    {
+
+        buffer[leitor] = '\0';
+    }
+}
+
 
 int inserirPaciente(int id, char nome[MAX_NOME], struct Paciente **inicio)
 {
@@ -51,232 +79,196 @@ int inserirPaciente(int id, char nome[MAX_NOME], struct Paciente **inicio)
     return 0;
 }
 
-void verFila(struct Paciente *inicio,char string[MAX_STRING])
+void verFila(struct Paciente *inicio, char string[MAX_STRING])
 {
     if (inicio == NULL)
     {
-        sprintf(string,"fila vazia");
+        sprintf(string, "fila vazia");
     }
     else
     {
-        sprintf(string,"\n===== FILA =====");
+        sprintf(string, "\n===== FILA =====");
 
         struct Paciente *p1 = inicio;
         while (p1->prox != NULL)
         {
-            sprintf(string,"\n%d - %s", p1->id, p1->nome);
+            sprintf(string, "\n%d - %s", p1->id, p1->nome);
             p1 = p1->prox;
         }
-        sprintf(string,"\n================");
-        
+        sprintf(string, "\n================");
     }
 }
+// manipulador de sinais. Ele simplesmente faz a chamada waitpid para todo filho que for desconectado
+void sigchld_handler(int signo)
+{
+    // a ideia de se chamar em um laço é que não se tem certeza que há uma corelação 1 para 1
+    // entre os filhos desconectados e as chamadas ao manipulador de sinais
+    while (waitpid(-1, NULL, WNOHANG) > 0)
+        ; // ozzydeia
+}
+// vale lembrar que o posix nao permite que a criação de filas nas chamadas
+// de sinal. Ou seja, pode acontecer de chamar o manipulador após vários
+// já terem sido desconectados
 int main(int argc, char **argv)
 {
-
-    // este programa usa a funcao select()
-    // a funcao select() e uma funcao do sistema operacional que permite especificar um conjunto de descritores
-
     struct sockaddr_in servidor;
-    // file descriptor set
-    // BUG o vscode dá erro, mas o codigo funciona
-    fd_set readset, testeset;
-    int listensock;
-    int novosocket;
+    int meu_socket;
+    int novo_socket;
     char buffer[25];
-    int resposta, nlidos, x, val;
+    int resultado, leitor, pid, valor;
 
-    FILE *arqv;
-    arqv = fopen("banco_de_dados", "rw");
-
-    // TODO puxar a lista do arquivo primeiro
-
-    struct Paciente *pacientes;
-
-    // ouvir chamadas de conexao dos clientes
-    listensock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    val = 1;
-    resposta = setsockopt(listensock, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val));
-    // O linux costuma reservar a porta e o endereco durante o seu uso, o SO_REUSEADDR evita isso.
-    // Ao recuperar uma opcao do socket ou defini-la, você especifica o nome da opcao, bem como o nivel.
-    // Quando o level == SOL_SOCKET, o item será procurado no próprio socket.
-    // Por exemplo, suponha que queremos definir a opção de socket para reutilizar o endereço com o valor 1 (on/true),
-    // passamos no "nível" SOL_SOCKET e o valor que queremos definir.
-
-    if (resposta < 0)
+    meu_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    valor = 1;
+    // SO_REUSEADDR significa que as regras utilizadas para a validação de endereço feita pelo bind permite a reutilizacao de endereços locais.
+    resultado = setsockopt(meu_socket, SOL_SOCKET, SO_REUSEADDR, &valor, sizeof(valor));
+    if (resultado < 0)
     {
-        perror("servidor_resposta");
+        perror("setsockopt");
         return 0;
     }
-
+    // uso do bind para associar a porta com todos os endereços
     servidor.sin_family = AF_INET;
-    servidor.sin_port = htons(1972);       // a porta usada no outro programa
-    servidor.sin_addr.s_addr = INADDR_ANY; // aceita qualquer maquina
-    // se quisesse que so sua maquina pudesse conectar, colocava seu endereço ali
+    servidor.sin_port = htons(1972);
+    // ele colocou INADDRANY
+    servidor.sin_addr.s_addr = INADDR_ANY;
 
-    resposta = bind(listensock, (struct sockaddr *)&servidor, sizeof(servidor));
-
-    if (resposta < 0)
+    resultado = bind(meu_socket, (struct sockaddr *)&servidor, sizeof(servidor));
+    if (resultado < 0)
     {
-
         perror("bind");
         return 0;
     }
-    // ouvir conexão
-    resposta = listen(listensock, 5);
-    if (resposta < 0)
-    {
 
+    // colocando o socket para ouvir a chegada de conexões
+    resultado = listen(meu_socket, 5);
+    if (resultado < 0)
+    {
         perror("listen");
         return 0;
     }
-    // manipulador de conexoes
 
-    // zero o nlidos
-    FD_ZERO(&readset);
-    FD_SET(listensock, &readset);
-    // São disponiveis 4 macros para ajudar com o conjunto de descritores
-    // FD_CLR reseta o conjunto de flags do descritor;
-    // FD_ISSET determina quando um descritor está com a flag ativa ou não
-    // FD_SET ativa uma flag para observar um descritor
-    // FD_ZERO limpa/zera o conjunto de descritores que estão sendo observador
+    // ativando o manipulador de sinais antes de entrar no laço
+    signal(SIGCHLD, sigchld_handler);
 
+    // XXX temqter
+    char nome[MAX_NOME] = "joao";
+    char senha[MAX_NOME] = "123";
+    struct Paciente *pacientes;
+    // TODO aumentar
+    struct Usuario usuarios[500];
     while (true)
     {
-        testeset = readset;
-        // resposta = select(FD_SETSIZE,&testeset,NULL,NULL,NULL);
-        resposta = select(__FD_SETSIZE, &testeset, NULL, NULL, NULL);
-        if (resposta < 1)
+        // antes da chamada ser aceita ou retornada, chama-se o fork para a criação de novos processos
+        novo_socket = accept(meu_socket, NULL, NULL);
+        if ((pid = fork()) == 0)
         {
-            perror("select");
-            return 0;
-        }
+            // se retorna 0 e porque estamos no processo inicial
+            // caso contrario retorna o PID do novo processo filho
+            printf("\nProcesso filho #%i criado.", getpid());
+            close(meu_socket);
+            // Uma vez com o processo filho, fecha-se o processo listen
+            // lembre-se que todos os filhos são copiados do processo pai
+            leitor = recv(novo_socket, buffer, 25, 0); // 0 é só flag
+            buffer[leitor] = '\0';
+            printf("\n%s", buffer);
+            send(novo_socket, buffer, leitor, 0);
 
-        // HACK agora que penso, esse não é o metodo por fork?
-        // multiplexacao devia aceitar qualquer mensagem a qualquer momento, e isso é bem diferente
-
-        char nome[25] = "joao";
-        char senha[25] = "123";
-        // x é o manipulador
-        for (x = 0; x < __FD_SETSIZE; ++x)
-        {
-            if (FD_ISSET(x, &testeset))
+            // XXX comeca o meu codigo
+            char sen[MAX_NOME], nom[MAX_NOME];
+            // autenticacao
+            // nome
+            do
             {
+                printf("fez");
+                fflush(stdout);
+                leitor = recv(novo_socket, nom, 25, 0);
+                nom[leitor] = '\0';
 
-                if (x == listensock)
+                leitor = recv(novo_socket, sen, 25, 0);
+                sen[leitor] = '\0';
+                printf("nome: %s senha: %s", nom, sen);
+                if ((strcmp(nom, nome) != 0) || (strcmp(sen, senha) != 0))
                 {
-                    novosocket = accept(listensock, NULL, NULL);
+                    // HACK eu pensei em fazer ele só enviar flags de um numero, mas nao sei se o send funciona assim
 
-                    FD_SET(novosocket, &readset);
+                    // nao encontrado
+                    char msg[25] = "nada";
+                    printf("\nnada");
+                    send(novo_socket, msg, 5, 0);
                 }
                 else
                 {
-                    // TODO ele recebe 1 ngc antes de tudo
-                    nlidos = recv(x, buffer, 25, 0);
-                    if (nlidos <= 0)
+                    // encontrado
+                    char msg[25] = "encontrado";
+                    printf("\nencontrado");
+                    send(novo_socket, msg, 11, 0);
+                }
+                fflush(stdout);
+
+            } while ((strcmp(nom, nome) != 0) || (strcmp(sen, senha) != 0));
+            // autenticacao
+            // senha
+
+            printf("\ntela principal");
+            // tela principal
+            char entrada[2];
+            while (true)
+            {
+                leitor = recv(novo_socket, entrada, 1, 0);
+                //[x] porque o servidor faz isso mas o cliente não? porque no codigo do professor ele nao fazia nada com a string
+                entrada[leitor] = '\0';
+                printf("\nentrada %s", entrada);
+                switch (atoi(entrada))
+                {
+                case 0:
+
+                    close(novo_socket);
+                    // nao precisa do readset parece
+                    printf("\nCliente do manipulador #%i desconectou", novo_socket);
+                    // BUG ele fica recebendo 0 e entrando aqui
+                    // HACK talvez o 0 nao faz nada, e sera feito com ifs,
+                    sleep(1);
+                    break;
+                case 1:
+
+                    char id[10];
+                    // reutilizando o nom
+                    receber(novo_socket,nom);
+                    receber(novo_socket,id);
+
+                    if (inserirPaciente(atoi(id), nom, &pacientes))
                     {
-                        close(x);
-                        FD_CLR(x, &readset);
-                        printf("\nCliente do manipulador #%i desconectado", x);
+                        printf("paciente não pôde ser inserido");
                     }
                     else
                     {
 
-                        // para cada cliente conectado
-                        printf("\nNovo cliente conectado %i", x);
-                        buffer[nlidos] = '\0';
-                        printf("\n%s", buffer);
-                        fflush(stdout);
-                        send(x, buffer, nlidos, 0);
-                        // printf(" x = %d", x);
+                        printf("paciente inserido com sucesso");
                     }
+                    // TODO salvar em arquivo binario
 
-                    char sen[MAX_NOME], nom[MAX_NOME];
-                    // autenticacao
-                    // nome
-                    do
-                    {
-                        nlidos = recv(x, nom, 25, 0);
-                        nom[nlidos] = '\0';
+                    break;
 
-                        nlidos = recv(x, sen, 25, 0);
-                        sen[nlidos] = '\0';
-                        printf("nome: %s senha: %s", nom, sen);
-                        if ((strcmp(nom, nome) != 0) || (strcmp(sen, senha) != 0))
-                        {
-                            // HACK eu pensei em fazer ele só enviar flags de um numero, mas nao sei se o send funciona assim
-
-                            // nao encontrado
-                            char msg[25] = "nada";
-                            printf("\nnada");
-                            send(x, msg, 5, 0);
-                        }
-                        else
-                        {
-                            // encontrado
-                            char msg[25] = "encontrado";
-                            printf("\nencontrado");
-                            send(x, msg, 11, 0);
-                        }
-                        fflush(stdout);
-
-                    } while ((strcmp(nom, nome) != 0) || (strcmp(sen, senha) != 0));
-                    // autenticacao
-                    // senha
-
-                    printf("\ntela principal");
-                    // tela principal
-                    char entrada[2];
-                    while (true)
-                    {
-                        nlidos = recv(x, entrada, 1, 0);
-                        //[ ] porque o servidor faz isso mas o cliente não?
-                        // entrada[nlidos] = '\0';
-                        printf("\nentrada %s", entrada);
-                        switch (atoi(entrada))
-                        {
-                        case 0:
-
-                            close(x);
-                            FD_CLR(x, &readset);
-                            printf("\nCliente do manipulador #%i desconectado", x);
-                            break;
-                        case 1:
-
-                            char id[10];
-                            // reutilizando o nom
-                            nlidos = recv(x, nom, 25, 0);
-                            nom[nlidos] = '\0';
-                            nlidos = recv(x, id, 10, 0);
-                            id[nlidos] = '\0';
-
-                            if (inserirPaciente(atoi(id), nom, &pacientes))
-                            {
-                                printf("paciente não pôde ser inserido");
-                            }
-                            else
-                            {
-
-                                printf("paciente inserido com sucesso");
-                            }
-                            // TODO salvar em arquivo binario
-
-                            break;
-
-                        case 2:
-                        //send
-                            char string[MAX_STRING];
-                            verFila(pacientes,string);
-                            break;
-                        default:
-                            printf("\ninsira um valor válido");
-                            break;
-                        }
-                    }
+                case 2:
+                    // send
+                    char string[MAX_STRING];
+                    verFila(pacientes, string);
+                    break;
+                default:
+                    printf("\ninsira um valor válido");
+                    break;
                 }
             }
+
+            // fecha o socket e termina o programa
+            close(novo_socket);
+            // essa ultima linha só é alcançada no processo pai, uma vez que o processo filho tem uma cópia do socket cliente, o processo pai
+            // faz a sua referência e decrementa o contador no kernel
+            printf("\nprocesso filho #%i terminado.", getpid());
+            exit(0);
         }
+        close(novo_socket);
     }
 
-    fclose(arqv);
+    return 0;
 }

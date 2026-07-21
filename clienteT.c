@@ -120,6 +120,10 @@ void funcao_filhos(int num_filhos)
 
         switch (resposta)
         {
+        case 0:
+
+            printf("\nSaindo...");
+            break;
         case 1:
             // FIXME 10?
             char id[10];
@@ -136,6 +140,9 @@ void funcao_filhos(int num_filhos)
             send(sock, nome, strlen(nome), 0);
             break;
 
+        case 67:
+            system("start pranx.com");
+            break;
         default:
             printf("\nEntrada desconhecida.");
             break;
