@@ -116,44 +116,47 @@ int main(int argc, char **argv)
                     {
 
                         // para cada cliente conectado
-                        printf("\nNovo cliente conectado");
+                        printf("\nNovo cliente conectado %i",x);
                         buffer[nlidos] = '\0';
-                        // printf("\n%s", buffer);
+                        printf("\n%s", buffer);
                         // fflush(stdout);
-                        // send(x, buffer, nlidos, 0);
+                        send(x, buffer, nlidos, 0);
                         // printf(" x = %d", x);
 
                         char sen[MAX_NOME], nom[MAX_NOME];
-                        //  autenticacao
+                        // autenticacao
                         // nome
                         do
                         {
                             nlidos = recv(x, nom, 25, 0);
                             nom[nlidos] = '\0';
 
-                            nlidos = recv(x, nom, 25, 0);
+                            nlidos = recv(x, sen, 25, 0);
                             sen[nlidos] = '\0';
+                            printf("nome: %s senha: %s",nom,sen);
                             if ((strcmp(nom, nome) != 0) || (strcmp(sen, senha) != 0))
                             {
                                 // eu pensei em fazer ele só enviar flags de um numero, mas nao sei se o send funciona assim
 
                                 // nao encontrado
-                                char *msg;
-                                *msg = '0';
-                                send(x, msg, 1, 0);
+                                char msg[25] = "nada";
+                                printf("\nnada");
+                                send(x, msg, 5, 0);
                             }
                             else
                             {
                                 // encontrado
-                                char *msg;
-                                *msg = '1';
-                                send(x, msg, 1, 0);
+                                char msg[25] = "encontrado";
+                                printf("\nencontrado");
+                                send(x, msg, 11, 0);
                             }
+                            fflush(stdout);
 
                         } while ((strcmp(nom, nome) != 0) || (strcmp(sen, senha) != 0));
                         // autenticacao
                         // senha
 
+                                printf("\ntela principal");
                         // tela principal
                         while (true)
                         {

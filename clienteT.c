@@ -69,6 +69,7 @@ void funcao_filhos(int num_filhos)
     }
 
     // deu tudo certo
+    send(sock, buffer, strlen(buffer), 0);
 
     printf("\nConectado ao servidor");
 
@@ -80,20 +81,21 @@ void funcao_filhos(int num_filhos)
     char *aut;
     do
     {
-
         printf("\nInsira seu Nome: ");
         scanf("%s", nome);
         printf("\nInsira sua senha: ");
         scanf("%s", senha);
         send(sock, nome, strlen(nome), 0);
         send(sock, senha, strlen(senha), 0);
-        recv(sock, aut, 1, 0);
-        if (aut != '1')
-        {
+        recv(sock, aut, 11, 0);
 
+        printf("aut %s", aut);
+        fflush(stdout);
+        if (strcmp(aut ,"encontrado") != 0)
+        {
             printf("\nNome ou senha incorretos");
         }
-    } while (aut != '1');
+    } while (strcmp(aut ,"encontrado") != 0);
 
     // retorna 1 se deu certo ou 0 para erro
 
