@@ -17,6 +17,7 @@ int main(int argc, char **argv)
 {
     int nfilhos = 1;
     int pid, x;
+    //[ ] quanto disso realmente precisa?
     if (argc > 1)
     {
         nfilhos = atoi(argv[1]);
@@ -37,11 +38,12 @@ int main(int argc, char **argv)
     return 0;
 }
 
+//[ ] devia existir?
 void funcao_filhos(int num_filhos)
 {
     int sock;
     struct sockaddr_in sAddr;
-    char buffer[25];
+    char buffer[25] = "opa";
     // socket cliente e binda da porta local
 
     // zera o ngc
@@ -71,6 +73,9 @@ void funcao_filhos(int num_filhos)
     // deu tudo certo
     send(sock, buffer, strlen(buffer), 0);
 
+    // recebe a merda q ele mandou
+    recv(sock, buffer, strlen(buffer), 0);
+
     printf("\nConectado ao servidor");
 
     // TODO resposta do servidor
@@ -78,7 +83,8 @@ void funcao_filhos(int num_filhos)
     char nome[MAX_NOME], senha[MAX_SENHA];
 
     // autenticacao
-    char *aut;
+    //[ ] o cliente precisa de autenticacao, ou é só o servidor?
+    char aut[25];
     do
     {
         printf("\nInsira seu Nome: ");
@@ -87,17 +93,22 @@ void funcao_filhos(int num_filhos)
         scanf("%s", senha);
         send(sock, nome, strlen(nome), 0);
         send(sock, senha, strlen(senha), 0);
+        sleep(1);
+        // XXX ao receber aut
         recv(sock, aut, 11, 0);
 
         printf("aut %s", aut);
         fflush(stdout);
-        if (strcmp(aut ,"encontrado") != 0)
+        if (strcmp(aut, "encontrado") != 0)
         {
             printf("\nNome ou senha incorretos");
+            fflush(stdout);
         }
-    } while (strcmp(aut ,"encontrado") != 0);
+    } while (strcmp(aut, "encontrado") != 0);
 
     // retorna 1 se deu certo ou 0 para erro
+    printf("porra");
+    fflush(stdout);
 
     int resposta;
 
@@ -105,22 +116,23 @@ void funcao_filhos(int num_filhos)
     while (resposta != 0)
     {
         printf("\n1 - Adicionar paciente \n2 - Ver fila\n3 - Heartbeat\n0 - Sair\n");
-        scanf("%d", resposta);
+        scanf("%d", &resposta);
 
         switch (resposta)
         {
         case 1:
-            int id;
+            // FIXME 10?
+            char id[10];
             char nome[MAX_NOME];
             printf("\nID:");
-            scanf("%d", &id);
+            scanf("%s", id);
             printf("\nNome:");
             scanf("%s", nome);
 
             // envia pro servidor pra ele preparar
-            // FIXME sizeof?
-            send(sock, resposta, sizeof(int), 0);
-            send(sock, id, sizeof(int), 0);
+            char resp[1];
+            send(sock, resp, 1, 0);
+            send(sock, id, 10, 0);
             send(sock, nome, strlen(nome), 0);
             break;
 
@@ -132,11 +144,12 @@ void funcao_filhos(int num_filhos)
 
     // enviar alguma coisa ao servidor
     // snprintf(buffer, 128, "dados do cliente #%i.", num_filhos);
-
-    sleep(1); // 1 segundo
-    printf("\nfilho #%i mandou %i caracteres", num_filhos, send(sock, buffer, strlen(buffer), 0));
-    sleep(1);
-    printf("\nfilho #%i recebeu %i caracteres", funcao_filhos, recv(sock, buffer, 25, 0));
-    sleep(1);
+    /*
+        sleep(1); // 1 segundo
+        printf("\nfilho #%i mandou %i caracteres", num_filhos, send(sock, buffer, strlen(buffer), 0));
+        sleep(1);
+        printf("\nfilho #%i recebeu %i caracteres", funcao_filhos, recv(sock, buffer, 25, 0));
+        sleep(1);
+        */
     close(sock);
 }
