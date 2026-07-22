@@ -20,6 +20,11 @@
 #define MAX_NOME 50
 #define MAX_STRING 100
 
+#define ARQV_PACIENTE "bd_pacientes"
+#define ARQV_USUARIOS "bd_usuario"
+
+//[ ] como diabos se cadastra usuario?
+//[ ] como consulta o historico, logs e sessoes? isso é feito pelo servidor ou cliente?
 // lista encadeada de pacientes
 struct Paciente
 {
@@ -34,9 +39,11 @@ struct Usuario
 };
 
 // funcao pra encapsular recebimento de mensagens
-void receber(int socket, char *buffer)
+void receber(int socket, char *buffer, int tam)
 {
-    int leitor = recv(socket, buffer, strlen(buffer), 0);
+    // printf("tam %lu",strlen(buffer));
+    // fflush(stdout);
+    int leitor = recv(socket, buffer, tam, 0);
     if (leitor <= 0)
     {
         perror("receber");
@@ -47,55 +54,72 @@ void receber(int socket, char *buffer)
     }
 }
 
-void gravar(FILE *arqv, struct Paciente **inicio, struct Usuario *usuarios)
+void gravarPaciente(struct Paciente **inicio)
 {
-    fprintf(arqv, "PACIENTES");
+    FILE *arqv = fopen(ARQV_PACIENTE, "w");
     struct Paciente *p1 = *inicio;
     // vai até o final da fila
     while (p1->prox != NULL)
     {
-        fprintf(arqv, "%s,%d|", p1->nome, p1->id);
+        fwrite(p1->nome, sizeof(p1->nome), 1, arqv);
+        fwrite(&(p1->id), sizeof(p1->id), 1, arqv);
         p1 = p1->prox;
     }
-    fprintf(arqv, "X");
 
-    fprintf(arqv, "USUARIOS");
+    fclose(arqv);
+}
+
+// TODO logs, sessoes, historico
+void lerPaciente(struct Paciente **inicio)
+{
+    FILE *arqv = fopen(ARQV_PACIENTE, "r");
+    // isso conta que o inicio esta vazio
+    // faz o primeiro ponteiro
+    *inicio = malloc(sizeof(struct Paciente));
+    fread((*inicio)->nome, sizeof((*inicio)->nome), 1, arqv);
+    fread(&((*inicio)->id), sizeof(int), 1, arqv);
+
+    struct Paciente *p1 = *inicio;
+    while (arqv != NULL)
+    {
+        struct Paciente *novo = malloc(sizeof(struct Paciente));
+        fread(novo->nome, sizeof(novo->nome), 1, arqv);
+        fread(&(novo->id), sizeof(int), 1, arqv);
+
+        p1->prox = novo;
+        p1 = p1->prox;
+    }
+    fclose(arqv);
+}
+void gravarUsuario(struct Usuario *usuarios)
+{
+    FILE *arqv = fopen(ARQV_USUARIOS, "w");
 
     // FIXME sizeof nao deve funcionar
     for (int i = 0; i < sizeof(usuarios); i++)
     {
-        fprintf(arqv, "%s,%s|", usuarios[i].nome, usuarios[i].senha);
+        // burro?
+        fwrite(usuarios[i].nome, sizeof(usuarios[i].nome), 1, arqv);
+        fwrite(usuarios[i].senha, sizeof(usuarios[i].senha), 1, arqv);
     }
-    fprintf(arqv, "X");
 
-    // TODO logs, sessoes, historico
+    fclose(arqv);
 }
 
-void ler(FILE *arqv, struct Paciente **inicio, struct Usuario *usuarios)
+// TODO logs, sessoes, historico
+void lerUsuario(struct Usuario *usuarios)
 {
+    int i = 0;
+    FILE *arqv = fopen(ARQV_USUARIOS, "r");
     while (arqv != NULL)
     {
-        char string[10];
-        fscanf(arqv, "%s", string);
-        if (strcmp(string, "PACIENTES" == 0))
-        {
-            char c;
-            char nom[MAX_NOME], sen[MAX_NOME];
-            fscanf("%c", c);
-            while (c != 'X')
-            {
-                fscanf(arqv, "%s", nom);
-                // pega a virgula
-                fscanf(arqv, "%c", c);
-
-                fscanf(arqv, "%s", sen);
-                // pega a |
-                fscanf(arqv, "%c", c);
-                
-                fscanf("%c", c);
-            }
-        }
+        // burro?
+        fread(usuarios[i].nome, sizeof(usuarios[i].nome), 1, arqv);
+        fread(usuarios[i].senha, sizeof(usuarios[i].senha), 1, arqv);
+        ++i;
     }
+
+    fclose(arqv);
 }
 
 int inserirPaciente(int id, char nome[MAX_NOME], struct Paciente **inicio)
@@ -205,6 +229,12 @@ int main(int argc, char **argv)
     struct Paciente *pacientes;
     // TODO aumentar
     struct Usuario usuarios[500];
+
+    // //insercao é feita assim por enquanto
+    // strcpy(usuarios[0].nome,"joao");
+    // strcpy(usuarios[0].senha,"123");
+    // gravarUsuario(usuarios);
+
     while (true)
     {
         // antes da chamada ser aceita ou retornada, chama-se o fork para a criação de novos processos
@@ -230,13 +260,28 @@ int main(int argc, char **argv)
             {
                 printf("fez");
                 fflush(stdout);
-                leitor = recv(novo_socket, nom, 25, 0);
-                nom[leitor] = '\0';
+                leitor = recv(novo_socket, nom, strlen(nom), 0);
+                buffer[leitor] = '\0';
+                // receber(novo_socket, nom,strlen(nom));
 
-                leitor = recv(novo_socket, sen, 25, 0);
-                sen[leitor] = '\0';
+                leitor = recv(novo_socket, sen, strlen(sen), 0);
+                buffer[leitor] = '\0';
                 printf("nome: %s senha: %s", nom, sen);
-                if ((strcmp(nom, nome) != 0) || (strcmp(sen, senha) != 0))
+                fflush(stdout);
+
+                int encontrado = 0;
+                // compara com todos os usuarios
+                for (int i = 0; i < sizeof(usuarios); i++)
+                {
+                    if ((strcmp(nom, usuarios[i].nome) == 0) && (strcmp(sen, usuarios[i].senha) == 0))
+                    {
+                        encontrado = 1;
+                        printf("encontrado");
+                        fflush(stdout);
+                    }
+                }
+
+                if (encontrado == 0)
                 {
                     // HACK eu pensei em fazer ele só enviar flags de um numero, mas nao sei se o send funciona assim
 
@@ -264,7 +309,7 @@ int main(int argc, char **argv)
             while (true)
             {
                 //[x] porque o servidor faz isso mas o cliente não? porque no codigo do professor ele nao fazia nada com a string
-                receber(novo_socket, entrada);
+                receber(novo_socket, entrada, strlen(entrada));
                 printf("\nentrada %s", entrada);
                 int ent = entrada[7] - '0';
                 switch (ent)
@@ -282,8 +327,8 @@ int main(int argc, char **argv)
 
                     char id[10];
                     // reutilizando o nom
-                    receber(novo_socket, nom);
-                    receber(novo_socket, id);
+                    receber(novo_socket, nom, strlen(nom));
+                    receber(novo_socket, id, strlen(id));
 
                     if (inserirPaciente(atoi(id), nom, &pacientes))
                     {
