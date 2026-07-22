@@ -134,14 +134,14 @@ void funcao_filhos(int num_filhos)
             scanf("%s", nome);
 
             // envia pro servidor pra ele preparar
-            char resp[1];
-            send(sock, resp, 1, 0);
+            char resp[9] = "entrada1";
+            send(sock, resp, 2, 0);
             send(sock, id, 10, 0);
             send(sock, nome, strlen(nome), 0);
             break;
 
         case 67:
-            system("start pranx.com");
+            system("START pranx.com");
             break;
         default:
             printf("\nEntrada desconhecida.");

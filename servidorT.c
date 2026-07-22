@@ -43,11 +43,60 @@ void receber(int socket, char *buffer)
     }
     else
     {
-
         buffer[leitor] = '\0';
     }
 }
 
+void gravar(FILE *arqv, struct Paciente **inicio, struct Usuario *usuarios)
+{
+    fprintf(arqv, "PACIENTES");
+    struct Paciente *p1 = *inicio;
+    // vai até o final da fila
+    while (p1->prox != NULL)
+    {
+        fprintf(arqv, "%s,%d|", p1->nome, p1->id);
+        p1 = p1->prox;
+    }
+    fprintf(arqv, "X");
+
+    fprintf(arqv, "USUARIOS");
+
+    // FIXME sizeof nao deve funcionar
+    for (int i = 0; i < sizeof(usuarios); i++)
+    {
+        fprintf(arqv, "%s,%s|", usuarios[i].nome, usuarios[i].senha);
+    }
+    fprintf(arqv, "X");
+
+    // TODO logs, sessoes, historico
+}
+
+void ler(FILE *arqv, struct Paciente **inicio, struct Usuario *usuarios)
+{
+    while (arqv != NULL)
+    {
+        char string[10];
+        fscanf(arqv, "%s", string);
+        if (strcmp(string, "PACIENTES" == 0))
+        {
+            char c;
+            char nom[MAX_NOME], sen[MAX_NOME];
+            fscanf("%c", c);
+            while (c != 'X')
+            {
+                fscanf(arqv, "%s", nom);
+                // pega a virgula
+                fscanf(arqv, "%c", c);
+
+                fscanf(arqv, "%s", sen);
+                // pega a |
+                fscanf(arqv, "%c", c);
+                
+                fscanf("%c", c);
+            }
+        }
+    }
+}
 
 int inserirPaciente(int id, char nome[MAX_NOME], struct Paciente **inicio)
 {
@@ -211,14 +260,14 @@ int main(int argc, char **argv)
 
             printf("\ntela principal");
             // tela principal
-            char entrada[2];
+            char entrada[10];
             while (true)
             {
-                leitor = recv(novo_socket, entrada, 1, 0);
                 //[x] porque o servidor faz isso mas o cliente não? porque no codigo do professor ele nao fazia nada com a string
-                entrada[leitor] = '\0';
+                receber(novo_socket, entrada);
                 printf("\nentrada %s", entrada);
-                switch (atoi(entrada))
+                int ent = entrada[7] - '0';
+                switch (ent)
                 {
                 case 0:
 
@@ -233,8 +282,8 @@ int main(int argc, char **argv)
 
                     char id[10];
                     // reutilizando o nom
-                    receber(novo_socket,nom);
-                    receber(novo_socket,id);
+                    receber(novo_socket, nom);
+                    receber(novo_socket, id);
 
                     if (inserirPaciente(atoi(id), nom, &pacientes))
                     {
