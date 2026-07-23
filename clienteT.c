@@ -13,6 +13,23 @@
 #define true 1
 void funcao_filhos(int num_filhos);
 
+
+// funcao pra encapsular recebimento de mensagens
+void receber(int socket, char *buffer, int tam)
+{
+    // printf("tam %lu",strlen(buffer));
+    // fflush(stdout);
+    int leitor = recv(socket, buffer, tam, 0);
+    if (leitor <= 0)
+    {
+        perror("receber");
+    }
+    else
+    {
+        buffer[leitor] = '\0';
+    }
+}
+
 int main(int argc, char **argv)
 {
     int nfilhos = 1;
@@ -74,9 +91,10 @@ void funcao_filhos(int num_filhos)
     send(sock, buffer, strlen(buffer), 0);
 
     // recebe a merda q ele mandou
-    recv(sock, buffer, strlen(buffer), 0);
+    receber(sock,buffer,25);
 
     printf("\nConectado ao servidor");
+    //fflush(stdout);
 
     // TODO resposta do servidor
 
@@ -91,11 +109,12 @@ void funcao_filhos(int num_filhos)
         scanf("%s", nome);
         printf("\nInsira sua senha: ");
         scanf("%s", senha);
+        fflush(stdin);
         send(sock, nome, strlen(nome), 0);
-        send(sock, senha, strlen(senha), 0);
         sleep(1);
+        send(sock, senha, strlen(senha), 0);
         // XXX ao receber aut
-        recv(sock, aut, 11, 0);
+        receber(sock,aut,25);
 
         printf("aut %s", aut);
         fflush(stdout);
@@ -134,8 +153,9 @@ void funcao_filhos(int num_filhos)
             scanf("%s", nome);
 
             // envia pro servidor pra ele preparar
-            char resp[9] = "entrada1";
+            char resp[9] = "1";
             send(sock, resp, 2, 0);
+            sleep(1);
             send(sock, id, 10, 0);
             send(sock, nome, strlen(nome), 0);
             break;
@@ -149,14 +169,5 @@ void funcao_filhos(int num_filhos)
         }
     }
 
-    // enviar alguma coisa ao servidor
-    // snprintf(buffer, 128, "dados do cliente #%i.", num_filhos);
-    /*
-        sleep(1); // 1 segundo
-        printf("\nfilho #%i mandou %i caracteres", num_filhos, send(sock, buffer, strlen(buffer), 0));
-        sleep(1);
-        printf("\nfilho #%i recebeu %i caracteres", funcao_filhos, recv(sock, buffer, 25, 0));
-        sleep(1);
-        */
     close(sock);
 }

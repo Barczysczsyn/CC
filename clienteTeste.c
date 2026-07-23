@@ -10,6 +10,22 @@
 
 void funcao_filhos(int num_filhos);
 
+// funcao pra encapsular recebimento de mensagens
+void receber(int socket, char *buffer, int tam)
+{
+    // printf("tam %lu",strlen(buffer));
+    // fflush(stdout);
+    int leitor = recv(socket, buffer, tam, 0);
+    if (leitor <= 0)
+    {
+        perror("receber");
+    }
+    else
+    {
+        buffer[leitor] = '\0';
+    }
+}
+
 int main(int argc, char **argv)
 {
     int nfilhos = 1;

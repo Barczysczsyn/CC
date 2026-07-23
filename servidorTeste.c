@@ -17,6 +17,22 @@
 
 #define true 1
 
+// funcao pra encapsular recebimento de mensagens
+void receber(int socket, char *buffer, int tam)
+{
+    // printf("tam %lu",strlen(buffer));
+    // fflush(stdout);
+    int leitor = recv(socket, buffer, tam, 0);
+    if (leitor <= 0)
+    {
+        perror("receber");
+    }
+    else
+    {
+        buffer[leitor] = '\0';
+    }
+}
+
 // manipulador de sinais. Ele simplesmente faz a chamada waitpid para todo filho que for desconectado
 void sigchld_handler(int signo)
 {
@@ -34,7 +50,7 @@ int main(int argc, char **argv)
     int meu_socket;
     int novo_socket;
     char buffer[25];
-    int resultado, leitor, pid, valor;
+    int resultado, leitor=0, pid, valor;
 
     meu_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     valor = 1;
@@ -84,8 +100,7 @@ int main(int argc, char **argv)
             // lembre-se que todos os filhos são copiados do processo pai
             do
             {
-                leitor = recv(novo_socket, buffer, 25, 0); // 0 é só flag
-                buffer[leitor] = '\0';
+                receber(novo_socket,buffer,25);
                 printf("\n%d caracteres recebidos:%s", leitor, buffer);
                 // send(novo_socket, buffer, leitor, 0);
                 fflush(stdout);

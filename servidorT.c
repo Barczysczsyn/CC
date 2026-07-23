@@ -107,7 +107,7 @@ void gravarUsuario(struct Usuario *usuarios)
 }
 
 // TODO logs, sessoes, historico
-void lerUsuario(struct Usuario *usuarios)
+int lerUsuario(struct Usuario *usuarios)
 {
     int i = 0;
     FILE *arqv = fopen(ARQV_USUARIOS, "r");
@@ -120,6 +120,7 @@ void lerUsuario(struct Usuario *usuarios)
     }
 
     fclose(arqv);
+    return i;
 }
 
 int inserirPaciente(int id, char nome[MAX_NOME], struct Paciente **inicio)
@@ -228,7 +229,8 @@ int main(int argc, char **argv)
     char senha[MAX_NOME] = "123";
     struct Paciente *pacientes;
     // TODO aumentar
-    struct Usuario usuarios[500];
+    struct Usuario usuarios[10000];
+    int quantUsuarios = lerUsuario(usuarios);
 
     // //insercao é feita assim por enquanto
     // strcpy(usuarios[0].nome,"joao");
@@ -244,122 +246,55 @@ int main(int argc, char **argv)
             // se retorna 0 e porque estamos no processo inicial
             // caso contrario retorna o PID do novo processo filho
             printf("\nProcesso filho #%i criado.", getpid());
+            fflush(stdout);
             close(meu_socket);
             // Uma vez com o processo filho, fecha-se o processo listen
             // lembre-se que todos os filhos são copiados do processo pai
-            leitor = recv(novo_socket, buffer, 25, 0); // 0 é só flag
-            buffer[leitor] = '\0';
-            printf("\n%s", buffer);
-            send(novo_socket, buffer, leitor, 0);
 
-            // XXX comeca o meu codigo
-            char sen[MAX_NOME], nom[MAX_NOME];
+            /// XXX comeca o meu codigo
+
+            // recebe e envia a confirmacao de conexao
+            receber(novo_socket, buffer, 25);
+            send(novo_socket, buffer, 25, 0);
+
             // autenticacao
-            // nome
+            char nom[25], sen[25];
             do
             {
-                printf("fez");
-                fflush(stdout);
-                leitor = recv(novo_socket, nom, strlen(nom), 0);
-                buffer[leitor] = '\0';
-                // receber(novo_socket, nom,strlen(nom));
-
-                leitor = recv(novo_socket, sen, strlen(sen), 0);
-                buffer[leitor] = '\0';
-                printf("nome: %s senha: %s", nom, sen);
-                fflush(stdout);
-
-                /*
-                int encontrado = 0;
-                // compara com todos os usuarios
-                for (int i = 0; i < sizeof(usuarios); i++)
-                {
-                    if ((strcmp(nom, usuarios[i].nome) == 0) && (strcmp(sen, usuarios[i].senha) == 0))
-                    {
-                        encontrado = 1;
-                        printf("encontrado");
-                        fflush(stdout);
-                    }
-            }*/
-
-                if ((strcmp(nom, nome) != 0) && (strcmp(sen, senha) != 0))
-                {
-                    // HACK eu pensei em fazer ele só enviar flags de um numero, mas nao sei se o send funciona assim
-
-                    // nao encontrado
-                    char msg[25] = "nada";
-                    printf("\nnada");
-                    send(novo_socket, msg, 5, 0);
-                }
-                else
-                {
-                    // encontrado
-                    char msg[25] = "encontrado";
-                    printf("\nencontrado");
-                    send(novo_socket, msg, 11, 0);
-                }
-                fflush(stdout);
-
-                sleep(1);
-
+                receber(novo_socket, nom, 25);
+                receber(novo_socket, sen, 25);
             } while ((strcmp(nom, nome) != 0) || (strcmp(sen, senha) != 0));
-            // autenticacao
-            // senha
 
-            printf("\ntela principal");
-            // tela principal
-            char entrada[10];
-            while (true)
+            strcpy(buffer,"encontrado");
+            send(novo_socket,buffer,25,0);
+
+            printf("\nusuario %s entrou no sistema",nom);
+            //while principal
+            do
             {
-                //[x] porque o servidor faz isso mas o cliente não? porque no codigo do professor ele nao fazia nada com a string
-                receber(novo_socket, entrada, strlen(entrada));
-                printf("\nentrada %s", entrada);
+                //recebe uma string q é só um numero
+                receber(novo_socket,buffer,2);
+                //converte essa string pra um numero int 
+                int resp = buffer[0] - '0';
 
-                //puta codigo de merda, muda para ifs
-                int ent = entrada[7] - '0';
-                switch (ent)
+
+                switch (resp)
                 {
-                case 0:
-
-                    close(novo_socket);
-                    // nao precisa do readset parece
-                    printf("\nCliente do manipulador #%i desconectou", novo_socket);
-                    // BUG ele fica recebendo 0 e entrando aqui
-                    // HACK talvez o 0 nao faz nada, e sera feito com ifs,
-                    sleep(1);
-                    break;
                 case 1:
-
-                    char id[10];
-                    // reutilizando o nom
-                    receber(novo_socket, nom, strlen(nom));
-                    receber(novo_socket, id, strlen(id));
-
-                    if (inserirPaciente(atoi(id), nom, &pacientes))
-                    {
-                        printf("paciente não pôde ser inserido");
-                    }
-                    else
-                    {
-
-                        printf("paciente inserido com sucesso");
-                    }
-                    // TODO salvar em arquivo binario
-
+                char novoNome[MAX_NOME],novaSenha[MAX_NOME];
+                receber(novo_socket,novoNome,MAX_NOME);
+                receber(novo_socket,novaSenha,MAX_NOME);
+                //usuarios[quantUsuarios].nome = novoNome;
+                //usuarios[quantUsuarios].senha = novaSenha;
+                //gravarUsuario(usuarios);
+                //TODO continuar
                     break;
-
-                case 2:
-                    // send
-                    char string[MAX_STRING];
-                    verFila(pacientes, string);
-                    break;
+                
                 default:
-                    printf("\ninsira um valor válido");
                     break;
                 }
-            }
-
-            // fecha o socket e termina o programa
+            } while (strcmp(buffer, "exit") != 0);
+            // if (strcmp(buffer, "exit") == 0)
             close(novo_socket);
             // essa ultima linha só é alcançada no processo pai, uma vez que o processo filho tem uma cópia do socket cliente, o processo pai
             // faz a sua referência e decrementa o contador no kernel
