@@ -19,6 +19,7 @@
 
 #define MAX_NOME 50
 #define MAX_STRING 100
+#define MAX_NUMERO 10
 
 #define ARQV_PACIENTE "bd_pacientes"
 #define ARQV_USUARIOS "bd_usuario"
@@ -26,6 +27,7 @@
 //[ ] como diabos se cadastra usuario?
 //[ ] como consulta o historico, logs e sessoes? isso é feito pelo servidor ou cliente?
 // lista encadeada de pacientes
+
 struct Paciente
 {
     char nome[MAX_NOME];
@@ -167,19 +169,25 @@ void verFila(struct Paciente *inicio, char string[MAX_STRING])
 {
     if (inicio == NULL)
     {
-        sprintf(string, "fila vazia");
+        strcpy(string, "fila vazia");
     }
     else
     {
-        sprintf(string, "\n===== FILA =====");
+        strcpy(string, "\n===== FILA =====");
 
         struct Paciente *p1 = inicio;
-        while (p1->prox != NULL)
+        while (p1 != NULL)
         {
-            sprintf(string, "\n%d - %s", p1->id, p1->nome);
+            // strcat(string, "\n%d - %s", p1->id, p1->nome);
+            char id[MAX_NUMERO];
+            snprintf(id, MAX_NUMERO, "%d", p1->id);
+            strcat(string, "\n");
+            strcat(string, id);
+            strcat(string, " - ");
+            strcat(string, p1->nome);
             p1 = p1->prox;
         }
-        sprintf(string, "\n================");
+        strcat(string, "\n================");
     }
 }
 // manipulador de sinais. Ele simplesmente faz a chamada waitpid para todo filho que for desconectado
@@ -235,20 +243,17 @@ int main(int argc, char **argv)
     signal(SIGCHLD, sigchld_handler);
 
     // XXX temqter
-    char nome[MAX_NOME] = "joao";
-    char senha[MAX_NOME] = "123";
     struct Paciente *pacientes;
     // TODO aumentar
     struct Usuario usuarios[10000];
 
-    // BUG
     int quantUsuarios = lerUsuario(usuarios);
 
     // //insercao é feita assim por enquanto
-    //  strcpy(usuarios[0].nome,"joao");
-    //  strcpy(usuarios[0].senha,"123");
-    //  gravarUsuario(usuarios,1);
-
+    // strcpy(usuarios[1].nome, "artur");
+    // strcpy(usuarios[1].senha, "123456");
+    // gravarUsuario(usuarios, 2);
+    // FIXME FIXME
     while (true)
     {
         // antes da chamada ser aceita ou retornada, chama-se o fork para a criação de novos processos
@@ -269,12 +274,28 @@ int main(int argc, char **argv)
             send(novo_socket, buffer, 25, 0);
 
             // autenticacao
-            char nom[25], sen[25];
+            char nom[MAX_NOME], sen[MAX_NOME];
+            int encontrado = 0;
             do
             {
-                receber(novo_socket, nom, 25);
-                receber(novo_socket, sen, 25);
-            } while ((strcmp(nom, nome) != 0) || (strcmp(sen, senha) != 0));
+                receber(novo_socket, nom, MAX_NOME);
+                receber(novo_socket, sen, MAX_NOME);
+
+                // checa toda a lista de usuarios para ver se encontra esse
+                for (int i = 0; i < quantUsuarios; i++)
+                {
+                    if ((strcmp(nom, usuarios[i].nome) == 0) && (strcmp(sen, usuarios[i].senha) == 0))
+                    {
+                        encontrado = 1;
+                    }
+                }
+
+                if (encontrado == 0)
+                {
+                    strcpy(buffer, "nao encontrado");
+                    send(novo_socket, buffer, 25, 0);
+                }
+            } while (encontrado == 0);
 
             strcpy(buffer, "encontrado");
             send(novo_socket, buffer, 25, 0);
@@ -286,15 +307,14 @@ int main(int argc, char **argv)
             {
                 // recebe uma string q é só um numero
                 receber(novo_socket, buffer, 2);
-                printf("\nentrada %s", buffer);
-                // converte essa string pra um numero int
+                // printf("\nentrada %s", buffer);
+                //  converte essa string pra um numero int
                 int resp = buffer[0] - '0';
 
                 switch (resp)
                 {
                 case 0:
                     // sem o case 0 ele buga forte
-                    // BUG ele nao recebe a entrada 0 se vc fez outra entrada antes
                     printf("\n filho #%i desconectou.", getpid());
                     sleep(1);
                     break;
@@ -303,24 +323,41 @@ int main(int argc, char **argv)
                     char novoNome[MAX_NOME], novoID[MAX_NOME];
                     receber(novo_socket, novoNome, MAX_NOME);
                     receber(novo_socket, novoID, MAX_NOME);
+                    char status[20];
                     if (inserirPaciente(atoi(novoID), novoNome, &pacientes))
                     {
-
                         printf("\npaciente %s inserido com sucesso", novoNome);
+                        strcpy(status, "sucesso");
+                        send(novo_socket, status, 25, 0);
                     }
                     else
                     {
 
                         printf("\npaciente %s não pôde ser inserido", novoNome);
+                        strcpy(status, "fracasso");
+                        send(novo_socket, status, 25, 0);
                     }
                     // TODO continuar
+                    //gravarPaciente(pacientes);
+                    fflush(stdout);
+                    break;
+                case 2:
+                    char string[MAX_STRING];
+                    verFila(pacientes, string);
+
+                    send(novo_socket, string, MAX_STRING, 0);
+                    printf("string: %s",string);
                     fflush(stdout);
                     break;
 
                 default:
                     // isso basicamente não vai acontecer, pq já tem proteção contra isso do lado do cliente
+                    //BUG o erro desconhecido está acontecendo muito, sem padrão nenhum
+                    printf("erro desconhecido, entrada %d.",resp);
+                    perror("erro desconhecido");
                     break;
                 }
+                sleep(1);
             } while (buffer[0] != '0');
             // if (strcmp(buffer, "exit") == 0)
             close(novo_socket);

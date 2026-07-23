@@ -10,7 +10,12 @@
 
 #define MAX_NOME 50
 #define MAX_SENHA 20
+#define MAX_BUF 25
+#define MAX_NUMERO 10
+#define MAX_STRING 100
 #define true 1
+
+//XXX cuidado para colcar o mesmo tamanho ao enviar e receber
 void funcao_filhos(int num_filhos);
 
 // funcao pra encapsular recebimento de mensagens
@@ -108,16 +113,16 @@ void funcao_filhos(int num_filhos)
     {
         printf("\nInsira seu Nome: ");
         scanf("%s", nome);
+        send(sock, nome, MAX_NOME, 0);
         printf("\nInsira sua senha: ");
         scanf("%s", senha);
         fflush(stdin);
-        send(sock, nome, strlen(nome), 0);
         sleep(1);
-        send(sock, senha, strlen(senha), 0);
+        send(sock, senha, MAX_NOME, 0);
         // BUG ao receber aut, o 'en' fica salvo
         receber(sock, aut, 25);
 
-        //printf("aut %s", aut);
+        // printf("aut %s", aut);
         fflush(stdout);
         if (strcmp(aut, "encontrado") != 0)
         {
@@ -148,24 +153,44 @@ void funcao_filhos(int num_filhos)
             break;
         case 1:
             // envia pro servidor pra ele preparar
-            //ao colocar isso antes dos scanfs o problema parece ter sido resolvido
+            // ao colocar isso antes dos scanfs o problema parece ter sido resolvido
             strcpy(resp, "1");
             send(sock, resp, 2, 0);
 
-            // FIXME 10?
-            char id[10];
+            char id[MAX_NUMERO];
             char nome[MAX_NOME];
             printf("\nID:");
             scanf("%s", id);
             printf("\nNome:");
             scanf("%s", nome);
 
-            //sleep(1);
-            //BUG ele envia um em cima do outro
+            // sleep(1);
             send(sock, nome, MAX_NOME, 0);
             send(sock, id, MAX_NOME, 0);
+
+            char status[26];
+            receber(sock, buffer, MAX_BUF);
+            if (strcmp(buffer, "sucesso") == 0)
+            {
+                printf("\npaciente %s inserido com sucesso", nome);
+            }
+            else
+            {
+                //BUG ele insere no servidor, mas o buffer vem vazio
+                printf("\npaciente %s não pôde ser inserido:%s", nome, buffer);
+            }
+
             break;
 
+        case 2:
+
+            strcpy(resp, "2");
+            send(sock, resp, 2, 0);
+
+            char string[MAX_STRING];
+            receber(sock, string, MAX_STRING);
+            printf("\n%s", string);
+            break;
         case 67:
             system("xdg-open https://www.youtube.com/watch?v=eKCLxt9PLhk");
             break;
