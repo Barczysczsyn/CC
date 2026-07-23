@@ -47,6 +47,9 @@ void receber(int socket, char *buffer, int tam)
     if (leitor <= 0)
     {
         perror("receber");
+        // Teste
+        close(socket);
+        printf("\nsocket %d fechado à força", socket);
     }
     else
     {
@@ -91,16 +94,17 @@ void lerPaciente(struct Paciente **inicio)
     }
     fclose(arqv);
 }
-void gravarUsuario(struct Usuario *usuarios)
+void gravarUsuario(struct Usuario *usuarios, int quant)
 {
     FILE *arqv = fopen(ARQV_USUARIOS, "w");
+    if (arqv == NULL)
+        return;
 
-    // FIXME sizeof nao deve funcionar
-    for (int i = 0; i < sizeof(usuarios); i++)
+    for (int i = 0; i < quant; i++)
     {
         // burro?
-        fwrite(usuarios[i].nome, sizeof(usuarios[i].nome), 1, arqv);
-        fwrite(usuarios[i].senha, sizeof(usuarios[i].senha), 1, arqv);
+        fwrite(usuarios[i].nome, MAX_NOME, 1, arqv);
+        fwrite(usuarios[i].senha, MAX_NOME, 1, arqv);
     }
 
     fclose(arqv);
@@ -111,12 +115,17 @@ int lerUsuario(struct Usuario *usuarios)
 {
     int i = 0;
     FILE *arqv = fopen(ARQV_USUARIOS, "r");
-    while (arqv != NULL)
+    if (arqv == NULL)
+        return 0;
+
+    // abriu certo
+    while (fread(usuarios[i].nome, MAX_NOME, 1, arqv) == 1)
     {
-        // burro?
-        fread(usuarios[i].nome, sizeof(usuarios[i].nome), 1, arqv);
-        fread(usuarios[i].senha, sizeof(usuarios[i].senha), 1, arqv);
-        ++i;
+        fread(usuarios[i].senha, MAX_NOME, 1, arqv);
+
+        printf("\nlido nome: %s senha %s", usuarios[i].nome, usuarios[i].senha);
+
+        i++;
     }
 
     fclose(arqv);
@@ -125,10 +134,11 @@ int lerUsuario(struct Usuario *usuarios)
 
 int inserirPaciente(int id, char nome[MAX_NOME], struct Paciente **inicio)
 {
+    // retorna 1 se funcionou
     struct Paciente *novo = malloc(sizeof(struct Paciente));
     // erro no malloc
     if (novo == NULL)
-        return 1;
+        return 0;
 
     strcpy(novo->nome, nome);
     novo->id = id;
@@ -150,7 +160,7 @@ int inserirPaciente(int id, char nome[MAX_NOME], struct Paciente **inicio)
 
         p1->prox = novo;
     }
-    return 0;
+    return 1;
 }
 
 void verFila(struct Paciente *inicio, char string[MAX_STRING])
@@ -230,12 +240,14 @@ int main(int argc, char **argv)
     struct Paciente *pacientes;
     // TODO aumentar
     struct Usuario usuarios[10000];
+
+    // BUG
     int quantUsuarios = lerUsuario(usuarios);
 
     // //insercao é feita assim por enquanto
-    // strcpy(usuarios[0].nome,"joao");
-    // strcpy(usuarios[0].senha,"123");
-    // gravarUsuario(usuarios);
+    //  strcpy(usuarios[0].nome,"joao");
+    //  strcpy(usuarios[0].senha,"123");
+    //  gravarUsuario(usuarios,1);
 
     while (true)
     {
@@ -246,7 +258,6 @@ int main(int argc, char **argv)
             // se retorna 0 e porque estamos no processo inicial
             // caso contrario retorna o PID do novo processo filho
             printf("\nProcesso filho #%i criado.", getpid());
-            fflush(stdout);
             close(meu_socket);
             // Uma vez com o processo filho, fecha-se o processo listen
             // lembre-se que todos os filhos são copiados do processo pai
@@ -265,40 +276,57 @@ int main(int argc, char **argv)
                 receber(novo_socket, sen, 25);
             } while ((strcmp(nom, nome) != 0) || (strcmp(sen, senha) != 0));
 
-            strcpy(buffer,"encontrado");
-            send(novo_socket,buffer,25,0);
+            strcpy(buffer, "encontrado");
+            send(novo_socket, buffer, 25, 0);
 
-            printf("\nusuario %s entrou no sistema",nom);
-            //while principal
+            printf("\nusuario %s entrou no sistema", nom);
+            fflush(stdout);
+            // while principal
             do
             {
-                //recebe uma string q é só um numero
-                receber(novo_socket,buffer,2);
-                //converte essa string pra um numero int 
+                // recebe uma string q é só um numero
+                receber(novo_socket, buffer, 2);
+                printf("\nentrada %s", buffer);
+                // converte essa string pra um numero int
                 int resp = buffer[0] - '0';
-
 
                 switch (resp)
                 {
-                case 1:
-                char novoNome[MAX_NOME],novaSenha[MAX_NOME];
-                receber(novo_socket,novoNome,MAX_NOME);
-                receber(novo_socket,novaSenha,MAX_NOME);
-                //usuarios[quantUsuarios].nome = novoNome;
-                //usuarios[quantUsuarios].senha = novaSenha;
-                //gravarUsuario(usuarios);
-                //TODO continuar
+                case 0:
+                    // sem o case 0 ele buga forte
+                    // BUG ele nao recebe a entrada 0 se vc fez outra entrada antes
+                    printf("\n filho #%i desconectou.", getpid());
+                    sleep(1);
                     break;
-                
+
+                case 1:
+                    char novoNome[MAX_NOME], novoID[MAX_NOME];
+                    receber(novo_socket, novoNome, MAX_NOME);
+                    receber(novo_socket, novoID, MAX_NOME);
+                    if (inserirPaciente(atoi(novoID), novoNome, &pacientes))
+                    {
+
+                        printf("\npaciente %s inserido com sucesso", novoNome);
+                    }
+                    else
+                    {
+
+                        printf("\npaciente %s não pôde ser inserido", novoNome);
+                    }
+                    // TODO continuar
+                    fflush(stdout);
+                    break;
+
                 default:
+                    // isso basicamente não vai acontecer, pq já tem proteção contra isso do lado do cliente
                     break;
                 }
-            } while (strcmp(buffer, "exit") != 0);
+            } while (buffer[0] != '0');
             // if (strcmp(buffer, "exit") == 0)
             close(novo_socket);
             // essa ultima linha só é alcançada no processo pai, uma vez que o processo filho tem uma cópia do socket cliente, o processo pai
             // faz a sua referência e decrementa o contador no kernel
-            printf("\nprocesso filho #%i terminado.", getpid());
+            // printf("\nprocesso filho #%i terminado.", getpid());
             exit(0);
         }
         close(novo_socket);

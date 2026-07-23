@@ -13,7 +13,6 @@
 #define true 1
 void funcao_filhos(int num_filhos);
 
-
 // funcao pra encapsular recebimento de mensagens
 void receber(int socket, char *buffer, int tam)
 {
@@ -23,6 +22,8 @@ void receber(int socket, char *buffer, int tam)
     if (leitor <= 0)
     {
         perror("receber");
+        close(socket);
+        printf("\nsocket %d fechado à força", socket);
     }
     else
     {
@@ -91,10 +92,10 @@ void funcao_filhos(int num_filhos)
     send(sock, buffer, strlen(buffer), 0);
 
     // recebe a merda q ele mandou
-    receber(sock,buffer,25);
+    receber(sock, buffer, 25);
 
     printf("\nConectado ao servidor");
-    //fflush(stdout);
+    fflush(stdout);
 
     // TODO resposta do servidor
 
@@ -113,10 +114,10 @@ void funcao_filhos(int num_filhos)
         send(sock, nome, strlen(nome), 0);
         sleep(1);
         send(sock, senha, strlen(senha), 0);
-        // XXX ao receber aut
-        receber(sock,aut,25);
+        // BUG ao receber aut, o 'en' fica salvo
+        receber(sock, aut, 25);
 
-        printf("aut %s", aut);
+        //printf("aut %s", aut);
         fflush(stdout);
         if (strcmp(aut, "encontrado") != 0)
         {
@@ -125,8 +126,7 @@ void funcao_filhos(int num_filhos)
         }
     } while (strcmp(aut, "encontrado") != 0);
 
-    // retorna 1 se deu certo ou 0 para erro
-    printf(" porra");
+    printf("\nTela principal: ");
     fflush(stdout);
 
     int resposta;
@@ -139,11 +139,19 @@ void funcao_filhos(int num_filhos)
 
         switch (resposta)
         {
+            char resp[2];
         case 0:
-
+            strcpy(resp, "0");
+            send(sock, resp, 2, 0);
             printf("\nSaindo...");
+            sleep(1);
             break;
         case 1:
+            // envia pro servidor pra ele preparar
+            //ao colocar isso antes dos scanfs o problema parece ter sido resolvido
+            strcpy(resp, "1");
+            send(sock, resp, 2, 0);
+
             // FIXME 10?
             char id[10];
             char nome[MAX_NOME];
@@ -152,22 +160,22 @@ void funcao_filhos(int num_filhos)
             printf("\nNome:");
             scanf("%s", nome);
 
-            // envia pro servidor pra ele preparar
-            char resp[9] = "1";
-            send(sock, resp, 2, 0);
-            sleep(1);
-            send(sock, id, 10, 0);
-            send(sock, nome, strlen(nome), 0);
+            //sleep(1);
+            //BUG ele envia um em cima do outro
+            send(sock, nome, MAX_NOME, 0);
+            send(sock, id, MAX_NOME, 0);
             break;
 
         case 67:
-            system("START pranx.com");
+            system("xdg-open https://www.youtube.com/watch?v=eKCLxt9PLhk");
             break;
         default:
             printf("\nEntrada desconhecida.");
             break;
         }
     }
+    printf("acabou");
+    fflush(stdout);
 
     close(sock);
 }
