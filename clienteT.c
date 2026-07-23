@@ -107,7 +107,7 @@ void funcao_filhos(int num_filhos)
     } while (strcmp(aut, "encontrado") != 0);
 
     // retorna 1 se deu certo ou 0 para erro
-    printf("porra");
+    printf(" porra");
     fflush(stdout);
 
     int resposta;

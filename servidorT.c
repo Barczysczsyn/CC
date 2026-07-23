@@ -269,6 +269,7 @@ int main(int argc, char **argv)
                 printf("nome: %s senha: %s", nom, sen);
                 fflush(stdout);
 
+                /*
                 int encontrado = 0;
                 // compara com todos os usuarios
                 for (int i = 0; i < sizeof(usuarios); i++)
@@ -279,9 +280,9 @@ int main(int argc, char **argv)
                         printf("encontrado");
                         fflush(stdout);
                     }
-                }
+            }*/
 
-                if (encontrado == 0)
+                if ((strcmp(nom, nome) != 0) && (strcmp(sen, senha) != 0))
                 {
                     // HACK eu pensei em fazer ele só enviar flags de um numero, mas nao sei se o send funciona assim
 
@@ -299,6 +300,8 @@ int main(int argc, char **argv)
                 }
                 fflush(stdout);
 
+                sleep(1);
+
             } while ((strcmp(nom, nome) != 0) || (strcmp(sen, senha) != 0));
             // autenticacao
             // senha
@@ -311,6 +314,8 @@ int main(int argc, char **argv)
                 //[x] porque o servidor faz isso mas o cliente não? porque no codigo do professor ele nao fazia nada com a string
                 receber(novo_socket, entrada, strlen(entrada));
                 printf("\nentrada %s", entrada);
+
+                //puta codigo de merda, muda para ifs
                 int ent = entrada[7] - '0';
                 switch (ent)
                 {
