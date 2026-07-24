@@ -94,15 +94,14 @@ void funcao_filhos(int num_filhos)
     }
 
     // deu tudo certo
-    send(sock, buffer, strlen(buffer), 0);
+    send(sock, buffer, MAX_BUF, 0);
 
     // recebe a merda q ele mandou
-    receber(sock, buffer, 25);
+    receber(sock, buffer, MAX_BUF);
 
     printf("\nConectado ao servidor");
     fflush(stdout);
 
-    // TODO resposta do servidor
 
     char nome[MAX_NOME], senha[MAX_SENHA];
 
@@ -119,7 +118,6 @@ void funcao_filhos(int num_filhos)
         fflush(stdin);
         sleep(1);
         send(sock, senha, MAX_NOME, 0);
-        // BUG ao receber aut, o 'en' fica salvo
         receber(sock, aut, 25);
 
         // printf("aut %s", aut);
@@ -166,7 +164,7 @@ void funcao_filhos(int num_filhos)
 
             // sleep(1);
             send(sock, nome, MAX_NOME, 0);
-            send(sock, id, MAX_NOME, 0);
+            send(sock, id, MAX_NUMERO, 0);
 
             char status[26];
             receber(sock, buffer, MAX_BUF);
@@ -176,7 +174,6 @@ void funcao_filhos(int num_filhos)
             }
             else
             {
-                //BUG ele insere no servidor, mas o buffer vem vazio
                 printf("\npaciente %s não pôde ser inserido:%s", nome, buffer);
             }
 
@@ -191,16 +188,17 @@ void funcao_filhos(int num_filhos)
             receber(sock, string, MAX_STRING);
             printf("\n%s", string);
             break;
+            //TODO tirar isso no final ne
         case 67:
-            system("xdg-open https://www.youtube.com/watch?v=eKCLxt9PLhk");
+            system("xdg-open https://www.youtube.com/shorts/ObPCjyqfVjo");
             break;
         default:
             printf("\nEntrada desconhecida.");
             break;
         }
     }
-    printf("acabou");
-    fflush(stdout);
+    //printf("acabou");
+    //fflush(stdout);
 
     close(sock);
 }

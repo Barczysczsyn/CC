@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -26,6 +27,8 @@
 
 //[ ] como diabos se cadastra usuario?
 //[ ] como consulta o historico, logs e sessoes? isso é feito pelo servidor ou cliente?
+//[ ] como funciona o heartbeat?
+// TODO ele consegue receber 10000 clientes, so nao sei se é ao mesmo tempo
 // lista encadeada de pacientes
 
 struct Paciente
@@ -41,7 +44,7 @@ struct Usuario
 };
 
 // funcao pra encapsular recebimento de mensagens
-void receber(int socket, char *buffer, int tam)
+int receber(int socket, char *buffer, int tam)
 {
     // printf("tam %lu",strlen(buffer));
     // fflush(stdout);
@@ -49,13 +52,16 @@ void receber(int socket, char *buffer, int tam)
     if (leitor <= 0)
     {
         perror("receber");
-        // Teste
-        close(socket);
-        printf("\nsocket %d fechado à força", socket);
+        //  ele ficava recebendo eternamente de qualquer jeito
+        // precisava dar um jeito de setar o resp para 0 daqui
+        // close(socket);
+        printf("\nsocket %d será fechado à força", socket);
+        return 1;
     }
     else
     {
         buffer[leitor] = '\0';
+        return 0;
     }
 }
 
@@ -242,7 +248,6 @@ int main(int argc, char **argv)
     // ativando o manipulador de sinais antes de entrar no laço
     signal(SIGCHLD, sigchld_handler);
 
-    // XXX temqter
     struct Paciente *pacientes;
     // TODO aumentar
     struct Usuario usuarios[10000];
@@ -253,7 +258,12 @@ int main(int argc, char **argv)
     // strcpy(usuarios[1].nome, "artur");
     // strcpy(usuarios[1].senha, "123456");
     // gravarUsuario(usuarios, 2);
-    // FIXME FIXME
+
+    // aparentemente aqui já está pronto o servidor
+    // printf("\nServidor aberto na porta %i as %li horas", servidor.sin_port,(time(NULL))/3600);
+    printf("\nServidor aberto na porta %i", servidor.sin_port);
+    // esse fflush é essencial, se nao tiver ele fica mandando essa mensagem pra cada cliente que entra
+    fflush(stdout);
     while (true)
     {
         // antes da chamada ser aceita ou retornada, chama-se o fork para a criação de novos processos
@@ -263,6 +273,7 @@ int main(int argc, char **argv)
             // se retorna 0 e porque estamos no processo inicial
             // caso contrario retorna o PID do novo processo filho
             printf("\nProcesso filho #%i criado.", getpid());
+            fflush(stdout);
             close(meu_socket);
             // Uma vez com o processo filho, fecha-se o processo listen
             // lembre-se que todos os filhos são copiados do processo pai
@@ -306,7 +317,10 @@ int main(int argc, char **argv)
             do
             {
                 // recebe uma string q é só um numero
-                receber(novo_socket, buffer, 2);
+                if (receber(novo_socket, buffer, 2))
+                    // se esse receber der erro ele sai do laço
+                    // TODO essa verificação é boa, mas talvez deveria colocar em mais lugares
+                    break;
                 // printf("\nentrada %s", buffer);
                 //  converte essa string pra um numero int
                 int resp = buffer[0] - '0';
@@ -322,7 +336,7 @@ int main(int argc, char **argv)
                 case 1:
                     char novoNome[MAX_NOME], novoID[MAX_NOME];
                     receber(novo_socket, novoNome, MAX_NOME);
-                    receber(novo_socket, novoID, MAX_NOME);
+                    receber(novo_socket, novoID, MAX_NUMERO);
                     char status[20];
                     if (inserirPaciente(atoi(novoID), novoNome, &pacientes))
                     {
@@ -338,7 +352,7 @@ int main(int argc, char **argv)
                         send(novo_socket, status, 25, 0);
                     }
                     // TODO continuar
-                    //gravarPaciente(pacientes);
+                    // gravarPaciente(pacientes);
                     fflush(stdout);
                     break;
                 case 2:
@@ -346,14 +360,13 @@ int main(int argc, char **argv)
                     verFila(pacientes, string);
 
                     send(novo_socket, string, MAX_STRING, 0);
-                    printf("string: %s",string);
+                    printf("string: %s", string);
                     fflush(stdout);
                     break;
 
                 default:
                     // isso basicamente não vai acontecer, pq já tem proteção contra isso do lado do cliente
-                    //BUG o erro desconhecido está acontecendo muito, sem padrão nenhum
-                    printf("erro desconhecido, entrada %d.",resp);
+                    printf("erro desconhecido, entrada %d.", resp);
                     perror("erro desconhecido");
                     break;
                 }
