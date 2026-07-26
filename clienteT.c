@@ -208,3 +208,7 @@ void funcao_filhos(int num_filhos)
 
     close(sock);
 }
+///HACK todo cliente tem uma fila em si, que é atualizada quando o cliente é iniciado
+//heartbeat faz o servidor enviar primeiro a quantidade de elementos na fila, depois é enviado cada um deles
+//ao chegar eles sao reencadeados e a lista é comparada com a do cliente
+//se houver algum diferente a fila inteira é imprimida PORQUE É ASSIM QUE ESTÁ NO EXEMPLO

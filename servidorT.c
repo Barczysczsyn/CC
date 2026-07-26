@@ -98,38 +98,44 @@ void historico(int comando, char string1[MAX_NOME], char string2[MAX_NOME])
     fclose(arqv);
 }
 
-void sessao(int comando, char string1[MAX_NOME], char string2[MAX_NOME])
+void sessao(char *s, int comando, char string1[MAX_NOME], char string2[MAX_NOME])
 {
+    char temp[MAX_STRING];
     // a é modo append
-    FILE *arqv = fopen(ARQV_HISTORICO, "a");
     char tempo[25];
     getTempo(tempo);
     switch (comando)
     {
     case 0:
 
-        fprintf(arqv, "\n%s:usuario %s saiu do sistema", tempo, string1);
+        sprintf(temp, "\n%s:usuario %s saiu do sistema", tempo, string1);
+        strcat(s, temp);
         break;
     case 1:
-        fprintf(arqv, "\n%s:usuario %s inseriu o paciente %s na fila", tempo, string1, string2);
+        sprintf(temp, "\n%s:usuario %s inseriu o paciente %s na fila", tempo, string1, string2);
+        strcat(s, temp);
         break;
     case 2:
-        fprintf(arqv, "\n%s:usuario %s abriu a fila", tempo, string1);
+        sprintf(temp, "\n%s:usuario %s abriu a fila", tempo, string1);
+        strcat(s, temp);
 
         break;
     case 3:
-        fprintf(arqv, "\n%s:usuario %s executou heartbeat", tempo, string1);
+        fprintf(temp, "\n%s:usuario %s executou heartbeat", tempo, string1);
+
+        strcat(s, temp);
         break;
     // usuario entrou
     case 4:
-        fprintf(arqv, "\n%s:usuario %s entrou no sistema", tempo, string1);
+        fprintf(temp, "\n%s:usuario %s entrou no sistema", tempo, string1);
+
+        strcat(s, temp);
 
         break;
 
     default:
         break;
     }
-    fclose(arqv);
 }
 
 // funcao pra encapsular recebimento de mensagens
@@ -369,6 +375,10 @@ int main(int argc, char **argv)
 
             /// XXX comeca o meu codigo
 
+            /// cria a string pra salvar a sessao
+            char s[MAX_STRING];
+            //TODO colocar na sessao quando o socket é conectado?
+
             // recebe e envia a confirmacao de conexao
             receber(novo_socket, buffer, 25);
             send(novo_socket, buffer, 25, 0);
@@ -401,7 +411,9 @@ int main(int argc, char **argv)
             send(novo_socket, buffer, 25, 0);
 
             printf("\nusuario %s entrou no sistema", nom);
-            fflush(stdout);
+
+            // sessao
+            sessao(s,4,nom,NULL);
             // while principal
             do
             {
@@ -419,9 +431,9 @@ int main(int argc, char **argv)
                 case 0:
                     // sem o case 0 ele buga forte
                     printf("\n filho #%i desconectou.", getpid());
-                    // FIXME null funciona?
                     historico(0, nom, NULL);
-                    sleep(1);
+                    sessao(s,0,nom,NULL);
+                        sleep(1);
                     break;
 
                 case 1:
@@ -444,6 +456,7 @@ int main(int argc, char **argv)
                     }
                     // nom é o nome do usuario atual
                     historico(1, nom, novoNome);
+                    sessao(s,1,nom,novoNome);
                     // TODO continuar
                     // gravarPaciente(pacientes);
                     fflush(stdout);
@@ -455,14 +468,14 @@ int main(int argc, char **argv)
                     send(novo_socket, string, MAX_STRING, 0);
                     printf("string: %s", string);
                     fflush(stdout);
-                    // FIXME null funciona?
                     historico(2, nom, NULL);
+                    sessao(s,2,nom,NULL);
                     break;
 
                 case 3:
 
-                    // FIXME null funciona?
                     historico(3, nom, NULL);
+                    sessao(s,3,nom,NULL);
                     break;
 
                 default:
@@ -479,9 +492,14 @@ int main(int argc, char **argv)
             // faz a sua referência e decrementa o contador no kernel
             // printf("\nprocesso filho #%i terminado.", getpid());
             exit(0);
+        //gravar na sessão
+        FILE *sess = fopen(ARQV_SESSAO,"w");
+        fprintf(sess,s);
         }
         close(novo_socket);
+
     }
 
     return 0;
 }
+//[ ] sessao em um arquivo so ou em vários?
