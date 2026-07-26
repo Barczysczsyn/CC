@@ -121,13 +121,13 @@ void sessao(char *s, int comando, char string1[MAX_NOME], char string2[MAX_NOME]
 
         break;
     case 3:
-        fprintf(temp, "\n%s:usuario %s executou heartbeat", tempo, string1);
+        sprintf(temp, "\n%s:usuario %s executou heartbeat", tempo, string1);
 
         strcat(s, temp);
         break;
     // usuario entrou
     case 4:
-        fprintf(temp, "\n%s:usuario %s entrou no sistema", tempo, string1);
+        sprintf(temp, "\n%s:usuario %s entrou no sistema", tempo, string1);
 
         strcat(s, temp);
 
@@ -160,22 +160,61 @@ int receber(int socket, char *buffer, int tam)
     }
 }
 
-void gravarPaciente(struct Paciente **inicio)
+void gravarPacientes(struct Paciente **inicio)
 {
+    if (*inicio == NULL)
+    {
+        return;
+    }
     FILE *arqv = fopen(ARQV_PACIENTE, "w");
     struct Paciente *p1 = *inicio;
     // vai até o final da fila
-    while (p1->prox != NULL)
+    while (p1 != NULL)
     {
         fwrite(p1->nome, sizeof(p1->nome), 1, arqv);
         fwrite(&(p1->id), sizeof(p1->id), 1, arqv);
+        // nao vou fazer assim porque ele escreveria o ponteiro tambem, que é inutil nessa ocasiao
+        // fwrite(p1,sizeof(struct Paciente),1,arqv);
         p1 = p1->prox;
     }
 
     fclose(arqv);
 }
 
-// TODO logs, sessoes, historico
+void gravarPaciente(struct Paciente **inicio)
+{
+    if (*inicio == NULL)
+    {
+        return;
+    }
+    FILE *arqv = fopen(ARQV_PACIENTE, "a");
+    struct Paciente *p1 = *inicio;
+    // vai até o final da fila
+    while (p1->prox != NULL)
+    {
+        p1 = p1->prox;
+    }
+    // é o ultimo da fila
+    fwrite(p1->nome, sizeof(p1->nome), 1, arqv);
+    fwrite(&(p1->id), sizeof(p1->id), 1, arqv);
+
+    fclose(arqv);
+}
+
+void destroiPaciente(struct Paciente **inicio)
+{
+    struct Paciente *p1 = (*inicio)->prox,*p2;
+    free(*inicio);
+    *inicio = NULL;
+    // vai até o final da fila
+    while (p1->prox != NULL)
+    {
+        p2 = p1;
+        p1 = p1->prox;
+        free(p2);
+    }
+}
+// TODO logs
 void lerPaciente(struct Paciente **inicio)
 {
     FILE *arqv = fopen(ARQV_PACIENTE, "r");
@@ -185,12 +224,18 @@ void lerPaciente(struct Paciente **inicio)
     fread((*inicio)->nome, sizeof((*inicio)->nome), 1, arqv);
     fread(&((*inicio)->id), sizeof(int), 1, arqv);
 
+    printf("\nlido nome: %s id %d", (*inicio)->nome, (*inicio)->id);
+
     struct Paciente *p1 = *inicio;
     while (arqv != NULL)
     {
         struct Paciente *novo = malloc(sizeof(struct Paciente));
         fread(novo->nome, sizeof(novo->nome), 1, arqv);
         fread(&(novo->id), sizeof(int), 1, arqv);
+
+        printf("\nlido nome: %s id %d", novo->nome, novo->id);
+        fflush(stdout);
+        sleep(1);
 
         p1->prox = novo;
         p1 = p1->prox;
@@ -266,14 +311,16 @@ int inserirPaciente(int id, char nome[MAX_NOME], struct Paciente **inicio)
     return 1;
 }
 
-void verFila(struct Paciente *inicio, char string[MAX_STRING])
+int verFila(struct Paciente *inicio, char string[MAX_STRING])
 {
     if (inicio == NULL)
     {
         strcpy(string, "fila vazia");
+        return 0;
     }
     else
     {
+        int cont = 0;
         strcpy(string, "\n===== FILA =====");
 
         struct Paciente *p1 = inicio;
@@ -287,8 +334,10 @@ void verFila(struct Paciente *inicio, char string[MAX_STRING])
             strcat(string, " - ");
             strcat(string, p1->nome);
             p1 = p1->prox;
+            ++cont;
         }
         strcat(string, "\n================");
+        return cont;
     }
 }
 // manipulador de sinais. Ele simplesmente faz a chamada waitpid para todo filho que for desconectado
@@ -377,7 +426,7 @@ int main(int argc, char **argv)
 
             /// cria a string pra salvar a sessao
             char s[MAX_STRING];
-            //TODO colocar na sessao quando o socket é conectado?
+            // TODO colocar na sessao quando o socket é conectado?
 
             // recebe e envia a confirmacao de conexao
             receber(novo_socket, buffer, 25);
@@ -413,7 +462,7 @@ int main(int argc, char **argv)
             printf("\nusuario %s entrou no sistema", nom);
 
             // sessao
-            sessao(s,4,nom,NULL);
+            sessao(s, 4, nom, NULL);
             // while principal
             do
             {
@@ -432,15 +481,15 @@ int main(int argc, char **argv)
                     // sem o case 0 ele buga forte
                     printf("\n filho #%i desconectou.", getpid());
                     historico(0, nom, NULL);
-                    sessao(s,0,nom,NULL);
-                        sleep(1);
+                    sessao(s, 0, nom, NULL);
+                    sleep(1);
                     break;
 
                 case 1:
                     char novoNome[MAX_NOME], novoID[MAX_NOME];
                     receber(novo_socket, novoNome, MAX_NOME);
                     receber(novo_socket, novoID, MAX_NUMERO);
-                    char status[20];
+                    char status[10];
                     if (inserirPaciente(atoi(novoID), novoNome, &pacientes))
                     {
                         printf("\npaciente %s inserido com sucesso", novoNome);
@@ -456,9 +505,9 @@ int main(int argc, char **argv)
                     }
                     // nom é o nome do usuario atual
                     historico(1, nom, novoNome);
-                    sessao(s,1,nom,novoNome);
+                    sessao(s, 1, nom, novoNome);
                     // TODO continuar
-                    // gravarPaciente(pacientes);
+                    gravarPaciente(&pacientes);
                     fflush(stdout);
                     break;
                 case 2:
@@ -466,16 +515,51 @@ int main(int argc, char **argv)
                     verFila(pacientes, string);
 
                     send(novo_socket, string, MAX_STRING, 0);
-                    printf("string: %s", string);
-                    fflush(stdout);
+                    // printf("string: %s", string);
                     historico(2, nom, NULL);
-                    sessao(s,2,nom,NULL);
+                    sessao(s, 2, nom, NULL);
                     break;
 
                 case 3:
+                    // pega a fila atual
+                    char string1[MAX_STRING];
+                    verFila(pacientes, string1);
+
+                    // pega a fila do arquivo, que esta sempre atualizada
+                    //[ ] testar isso tbm
+                    destroiPaciente(&pacientes);
+                    lerPaciente(&pacientes);
+                    char string2[MAX_STRING];
+                    int tam = verFila(pacientes, string2);
+
+                    // aparentemente ele tem acesso à variavel do case 1
+                    // char status[10];
+                    if (strcmp(string1, string2) == 0)
+                    {
+                        strcpy(status, "ALIVE");
+                        send(novo_socket, status, 10, 0);
+                    }
+                    else
+                    {
+                        // qual o contrario de alive?
+                        strcpy(status, "DEAD");
+                        send(novo_socket, status, 10, 0);
+                        /*
+                        sprintf(status, "%d", tam);
+                        send(novo_socket, status, 10, 0);
+
+                        for (int i = 0; i < tam; i++)
+                        {
+                            send(novo_socket, status, 10, 0);
+                        }
+                            */
+                        // nem precisa disso, o lado do cliente nunca vai ter nada, so precisa atualizar no socket dele
+
+                        send(novo_socket, string2, MAX_STRING, 0);
+                    }
 
                     historico(3, nom, NULL);
-                    sessao(s,3,nom,NULL);
+                    sessao(s, 3, nom, NULL);
                     break;
 
                 default:
@@ -492,12 +576,12 @@ int main(int argc, char **argv)
             // faz a sua referência e decrementa o contador no kernel
             // printf("\nprocesso filho #%i terminado.", getpid());
             exit(0);
-        //gravar na sessão
-        FILE *sess = fopen(ARQV_SESSAO,"w");
-        fprintf(sess,s);
+            // gravar na sessão
+            FILE *sess = fopen(ARQV_SESSAO, "a");
+            fprintf(sess, "%s", s);
+            // fclose(sess);
         }
         close(novo_socket);
-
     }
 
     return 0;
