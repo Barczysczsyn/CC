@@ -15,7 +15,9 @@
 #define MAX_STRING 100
 #define true 1
 
-//XXX cuidado para colcar o mesmo tamanho ao enviar e receber
+// XXX cuidado para colcar o mesmo tamanho ao enviar e receber
+// [ ] o cliente tem q guardar a sua fila em arquivo tbm?
+
 void funcao_filhos(int num_filhos);
 
 // funcao pra encapsular recebimento de mensagens
@@ -102,7 +104,6 @@ void funcao_filhos(int num_filhos)
     printf("\nConectado ao servidor");
     fflush(stdout);
 
-
     char nome[MAX_NOME], senha[MAX_SENHA];
 
     // autenticacao
@@ -188,7 +189,12 @@ void funcao_filhos(int num_filhos)
             receber(sock, string, MAX_STRING);
             printf("\n%s", string);
             break;
-            //TODO tirar isso no final ne
+        case 3:
+
+            strcpy(resp, "3");
+            send(sock, resp, 2, 0);
+            break;
+        // TODO tirar isso no final ne
         case 67:
             system("xdg-open https://www.youtube.com/shorts/ObPCjyqfVjo");
             break;
@@ -197,8 +203,8 @@ void funcao_filhos(int num_filhos)
             break;
         }
     }
-    //printf("acabou");
-    //fflush(stdout);
+    // printf("acabou");
+    // fflush(stdout);
 
     close(sock);
 }

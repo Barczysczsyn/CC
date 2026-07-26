@@ -25,9 +25,15 @@
 #define ARQV_PACIENTE "bd_pacientes"
 #define ARQV_USUARIOS "bd_usuario"
 
+#define ARQV_HISTORICO "bd_historico"
+#define ARQV_SESSAO "bd_sessao"
+//[ ] oq é um log? como isso se diferencia de sessao?
+#define ARQV_LOGS "bd_logs"
+
 //[ ] como diabos se cadastra usuario?
 //[ ] como consulta o historico, logs e sessoes? isso é feito pelo servidor ou cliente?
 //[ ] como funciona o heartbeat?
+//[ ] o ver fila faz broadcast? isso é a retransmissão de mensagens?
 // TODO ele consegue receber 10000 clientes, so nao sei se é ao mesmo tempo
 // lista encadeada de pacientes
 
@@ -42,6 +48,89 @@ struct Usuario
     char nome[MAX_NOME];
     char senha[MAX_NOME];
 };
+
+void getTempo(char *string)
+{
+
+    time_t rawtime;
+    struct tm *timeinfo;
+
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+    // TODO ver se retorna certo
+    sprintf(string, "%s", asctime(timeinfo));
+    // tira o \n do final
+    string[strlen(string) - 1] = '\0';
+}
+// outras coisas q precisa
+
+void historico(int comando, char string1[MAX_NOME], char string2[MAX_NOME])
+{
+    // a é modo append
+    FILE *arqv = fopen(ARQV_HISTORICO, "a");
+    char tempo[25];
+    getTempo(tempo);
+    switch (comando)
+    {
+    case 0:
+
+        fprintf(arqv, "\n%s:usuario %s saiu do sistema", tempo, string1);
+        break;
+    case 1:
+        fprintf(arqv, "\n%s:usuario %s inseriu o paciente %s na fila", tempo, string1, string2);
+        break;
+    case 2:
+        fprintf(arqv, "\n%s:usuario %s abriu a fila", tempo, string1);
+
+        break;
+    case 3:
+        fprintf(arqv, "\n%s:usuario %s executou heartbeat", tempo, string1);
+        break;
+    // usuario entrou
+    case 4:
+        fprintf(arqv, "\n%s:usuario %s entrou no sistema", tempo, string1);
+
+        break;
+
+    default:
+        break;
+    }
+    fclose(arqv);
+}
+
+void sessao(int comando, char string1[MAX_NOME], char string2[MAX_NOME])
+{
+    // a é modo append
+    FILE *arqv = fopen(ARQV_HISTORICO, "a");
+    char tempo[25];
+    getTempo(tempo);
+    switch (comando)
+    {
+    case 0:
+
+        fprintf(arqv, "\n%s:usuario %s saiu do sistema", tempo, string1);
+        break;
+    case 1:
+        fprintf(arqv, "\n%s:usuario %s inseriu o paciente %s na fila", tempo, string1, string2);
+        break;
+    case 2:
+        fprintf(arqv, "\n%s:usuario %s abriu a fila", tempo, string1);
+
+        break;
+    case 3:
+        fprintf(arqv, "\n%s:usuario %s executou heartbeat", tempo, string1);
+        break;
+    // usuario entrou
+    case 4:
+        fprintf(arqv, "\n%s:usuario %s entrou no sistema", tempo, string1);
+
+        break;
+
+    default:
+        break;
+    }
+    fclose(arqv);
+}
 
 // funcao pra encapsular recebimento de mensagens
 int receber(int socket, char *buffer, int tam)
@@ -330,6 +419,8 @@ int main(int argc, char **argv)
                 case 0:
                     // sem o case 0 ele buga forte
                     printf("\n filho #%i desconectou.", getpid());
+                    // FIXME null funciona?
+                    historico(0, nom, NULL);
                     sleep(1);
                     break;
 
@@ -351,6 +442,8 @@ int main(int argc, char **argv)
                         strcpy(status, "fracasso");
                         send(novo_socket, status, 25, 0);
                     }
+                    // nom é o nome do usuario atual
+                    historico(1, nom, novoNome);
                     // TODO continuar
                     // gravarPaciente(pacientes);
                     fflush(stdout);
@@ -362,6 +455,14 @@ int main(int argc, char **argv)
                     send(novo_socket, string, MAX_STRING, 0);
                     printf("string: %s", string);
                     fflush(stdout);
+                    // FIXME null funciona?
+                    historico(2, nom, NULL);
+                    break;
+
+                case 3:
+
+                    // FIXME null funciona?
+                    historico(3, nom, NULL);
                     break;
 
                 default:
