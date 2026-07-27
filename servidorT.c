@@ -27,7 +27,7 @@
 
 #define ARQV_HISTORICO "bd_historico"
 #define ARQV_SESSAO "bd_sessao"
-//[ ] oq é um log? como isso se diferencia de sessao?
+//[x] oq é um log? como isso se diferencia de sessao?
 #define ARQV_LOGS "bd_logs"
 
 //[ ] como diabos se cadastra usuario?
@@ -38,8 +38,7 @@
 // lista encadeada de pacientes
 
 /*
-//BUG
-se 2 clientes inserirem num arquivo ao mesmo tempo, ele sera corrompido
+//BUG se 2 clientes inserirem num arquivo ao mesmo tempo, ele sera corrompido
 solucao flock()
 */
 struct Paciente
@@ -62,7 +61,6 @@ void getTempo(char *string)
 
     time(&rawtime);
     timeinfo = localtime(&rawtime);
-    // TODO ver se retorna certo
     sprintf(string, "%s", asctime(timeinfo));
     // tira o \n do final
     string[strlen(string) - 1] = '\0';
@@ -105,7 +103,7 @@ void historico(int comando, char string1[MAX_NOME], char string2[MAX_NOME])
 
 void sessao(char nome[MAX_NOME], time_t duracao)
 {
-    //printf("duracao %lf",((double)duracao / CLOCKS_PER_SEC));
+    // printf("duracao %lf",((double)duracao / CLOCKS_PER_SEC));
     char tempo[25];
     getTempo(tempo);
 
@@ -130,7 +128,7 @@ void logs(int comando, char string1[MAX_NOME], char string2[MAX_NOME])
         break;
     case 1:
 
-        fprintf(arqv, "\n%s:usuario %s nao conseguiu inserir o paciente %s", tempo, string1,string2);
+        fprintf(arqv, "\n%s:usuario %s nao conseguiu inserir o paciente %s", tempo, string1, string2);
 
         break;
     case 52:
@@ -229,7 +227,7 @@ void destroiPaciente(struct Paciente **inicio)
 
     *inicio = NULL;
 }
-// TODO logs
+
 void lerPaciente(struct Paciente **inicio)
 {
     FILE *arqv = fopen(ARQV_PACIENTE, "r");
@@ -251,9 +249,9 @@ void lerPaciente(struct Paciente **inicio)
         struct Paciente *novo = malloc(sizeof(struct Paciente));
         strcpy(novo->nome, nome);
         novo->id = id;
-        //printf("\nlido nome: %s id %d", novo->nome, novo->id);
-        //fflush(stdout);
-        //sleep(1);
+        // printf("\nlido nome: %s id %d", novo->nome, novo->id);
+        // fflush(stdout);
+        // sleep(1);
 
         p1->prox = novo;
         p1 = p1->prox;
@@ -276,7 +274,6 @@ void gravarUsuario(struct Usuario *usuarios, int quant)
     fclose(arqv);
 }
 
-// TODO logs, sessoes, historico
 int lerUsuario(struct Usuario *usuarios)
 {
     int i = 0;
@@ -451,26 +448,30 @@ int main(int argc, char **argv)
             // autenticacao
             char nom[MAX_NOME], sen[MAX_NOME];
             int encontrado = 0;
-            do
+            // do
+            // {
+            receber(novo_socket, nom, MAX_NOME);
+            receber(novo_socket, sen, MAX_NOME);
+
+            // checa toda a lista de usuarios para ver se encontra esse
+            for (int i = 0; i < quantUsuarios; i++)
             {
-                receber(novo_socket, nom, MAX_NOME);
-                receber(novo_socket, sen, MAX_NOME);
-
-                // checa toda a lista de usuarios para ver se encontra esse
-                for (int i = 0; i < quantUsuarios; i++)
+                if ((strcmp(nom, usuarios[i].nome) == 0) && (strcmp(sen, usuarios[i].senha) == 0))
                 {
-                    if ((strcmp(nom, usuarios[i].nome) == 0) && (strcmp(sen, usuarios[i].senha) == 0))
-                    {
-                        encontrado = 1;
-                    }
+                    encontrado = 1;
                 }
+            }
 
-                if (encontrado == 0)
-                {
-                    strcpy(buffer, "nao encontrado");
-                    send(novo_socket, buffer, 25, 0);
-                }
-            } while (encontrado == 0);
+            if (encontrado == 0)
+            {
+                strcpy(buffer, "nao encontrado");
+                send(novo_socket, buffer, 25, 0);
+                // finalizar a sessao
+
+                close(novo_socket);
+                exit(0);
+            }
+            // } while (encontrado == 0);
 
             strcpy(buffer, "encontrado");
             send(novo_socket, buffer, 25, 0);
@@ -506,6 +507,7 @@ int main(int argc, char **argv)
                     // FIXME nao e possivel colocar nomes com espaço
                     char novoNome[MAX_NOME], novoID[MAX_NOME];
                     receber(novo_socket, novoNome, MAX_NOME);
+                    //TODO nao tem verificacao pra ver se o novo id é um numero
                     receber(novo_socket, novoID, MAX_NUMERO);
                     char status[10];
                     if (inserirPaciente(atoi(novoID), novoNome, &pacientes))
@@ -521,12 +523,10 @@ int main(int argc, char **argv)
                         strcpy(status, "fracasso");
                         send(novo_socket, status, 25, 0);
 
-
-                    logs(1,nom,novoNome);
+                        logs(1, nom, novoNome);
                     }
                     // nom é o nome do usuario atual
                     historico(1, nom, novoNome);
-                    // TODO continuar
                     gravarPaciente(&pacientes);
                     fflush(stdout);
                     break;
@@ -592,7 +592,6 @@ int main(int argc, char **argv)
             // if (strcmp(buffer, "exit") == 0)
             time_t fim = time(NULL);
 
-
             sessao(nom, (fim - inicio));
             // acaba o filho
 
@@ -609,4 +608,4 @@ int main(int argc, char **argv)
 
     return 0;
 }
-//[ ] sessao em um arquivo so ou em vários?
+//[x] sessao em um arquivo so ou em vários?

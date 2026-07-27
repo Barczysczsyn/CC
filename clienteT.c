@@ -21,6 +21,7 @@
 void funcao_filhos(int num_filhos);
 
 // funcao pra encapsular recebimento de mensagens
+// FIXME possivel overflow
 void receber(int socket, char *buffer, int tam)
 {
     // printf("tam %lu",strlen(buffer));
@@ -30,7 +31,8 @@ void receber(int socket, char *buffer, int tam)
     {
         //
         perror("receber");
-        //close(socket);
+        // close(socket);
+        //FIXME acontece muitas vezes
         printf("\nsocket %d fechado à força", socket);
     }
     else
@@ -82,7 +84,7 @@ void funcao_filhos(int num_filhos)
     // sock stream e tcp
     // sock dgram e udp
     sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    //bind(sock, (const struct sockaddr *)&sAddr, sizeof(sAddr));
+    // bind(sock, (const struct sockaddr *)&sAddr, sizeof(sAddr));
 
     // conectar ao servidor que estiver rodando localmente
     sAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
@@ -110,33 +112,36 @@ void funcao_filhos(int num_filhos)
     // autenticacao
     //[ ] o cliente precisa de autenticacao, ou é só o servidor?
     char aut[25];
-    do
-    {
-        printf("\nInsira seu Nome: ");
-        scanf("%s", nome);
-        send(sock, nome, MAX_NOME, 0);
-        printf("\nInsira sua senha: ");
-        scanf("%s", senha);
-        fflush(stdin);
-        sleep(1);
-        send(sock, senha, MAX_NOME, 0);
-        receber(sock, aut, 25);
+    // do
+    // {
+    // printf("\nInsira seu Nome: ");
+    // scanf("%s", nome);
+    strcpy(nome, "joao");
+    send(sock, nome, MAX_NOME, 0);
+    // printf("\nInsira sua senha: ");
+    // scanf("%s", senha);
+    // fflush(stdin);
+    sleep(1);
 
-        // printf("aut %s", aut);
+    strcpy(senha, "123");
+    send(sock, senha, MAX_NOME, 0);
+    receber(sock, aut, 25);
+
+    // printf("aut %s", aut);
+    fflush(stdout);
+    if (strcmp(aut, "encontrado") != 0)
+    {
+        printf("\nNome ou senha incorretos");
         fflush(stdout);
-        if (strcmp(aut, "encontrado") != 0)
-        {
-            printf("\nNome ou senha incorretos");
-            fflush(stdout);
-        }
-    } while (strcmp(aut, "encontrado") != 0);
+    }
+    // } while (strcmp(aut, "encontrado") != 0);
 
     printf("\nTela principal: ");
     fflush(stdout);
 
     int resposta;
 
-    // quando tudo estiver acabado
+    // quando tudo estiver pronto
     while (resposta != 0)
     {
         printf("\n1 - Adicionar paciente \n2 - Ver fila\n3 - Heartbeat\n0 - Sair\n");
@@ -162,7 +167,17 @@ void funcao_filhos(int num_filhos)
             printf("\nID:");
             scanf("%s", id);
             printf("\nNome:");
-            scanf("%s", nome);
+            // scanf("%s", nome);
+
+
+            // le o \n para que o fgets nao seja pulado,
+            // TODO má pratica
+            int c;
+            while ((c = getchar()) != '\n' && c != EOF)
+                ;
+            fgets(nome, MAX_NOME, stdin);
+            //tira o \n do final
+            nome[strlen(nome)-1] = '\0';
 
             // sleep(1);
             send(sock, nome, MAX_NOME, 0);
@@ -196,11 +211,11 @@ void funcao_filhos(int num_filhos)
             send(sock, resp, 2, 0);
 
             // esperar
-            //de alguma forma, o erro era eu tentanto reusar o status
+            // de alguma forma, o erro era eu tentanto reusar o status
             char alive[10];
             sleep(1);
             receber(sock, alive, 10);
-            printf("\n%s", alive);
+            // printf("\n%s", alive);
 
             if (strcmp(alive, "ALIVE") == 0)
             {
@@ -215,7 +230,11 @@ void funcao_filhos(int num_filhos)
             break;
         // TODO tirar isso no final ne
         case 67:
-            system("xdg-open https://www.youtube.com/shorts/ObPCjyqfVjo");
+            system("xdg-open https://www.youtube.com/watch?v=9OfgrpnXAuY");
+            break;
+        // TODO tirar isso no final ne
+        case 69:
+            system("xdg-open https://www.youtube.com/watch?v=FCG494Acmlw&list=PLAeYBBpitJjlr58DO0Yl7Jz4DATEFDUfK&index=67");
             break;
         default:
             printf("\nEntrada desconhecida.");
