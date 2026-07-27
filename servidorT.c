@@ -19,7 +19,7 @@
 #define true 1
 
 #define MAX_NOME 50
-#define MAX_STRING 100
+#define MAX_STRING 500
 #define MAX_NUMERO 10
 
 #define ARQV_PACIENTE "bd_pacientes"
@@ -37,6 +37,11 @@
 // TODO ele consegue receber 10000 clientes, so nao sei se é ao mesmo tempo
 // lista encadeada de pacientes
 
+/*
+//BUG
+se 2 clientes inserirem num arquivo ao mesmo tempo, ele sera corrompido
+solucao flock()
+*/
 struct Paciente
 {
     char nome[MAX_NOME];
@@ -100,6 +105,7 @@ void historico(int comando, char string1[MAX_NOME], char string2[MAX_NOME])
 
 void sessao(char *s, int comando, char string1[MAX_NOME], char string2[MAX_NOME])
 {
+    printf("\nsessao");
     char temp[MAX_STRING];
     // a é modo append
     char tempo[25];
@@ -139,6 +145,7 @@ void sessao(char *s, int comando, char string1[MAX_NOME], char string2[MAX_NOME]
 }
 
 // funcao pra encapsular recebimento de mensagens
+//FIXME possivel overflow
 int receber(int socket, char *buffer, int tam)
 {
     // printf("tam %lu",strlen(buffer));
@@ -160,6 +167,7 @@ int receber(int socket, char *buffer, int tam)
     }
 }
 
+//grava todos os pacientes em uma fila vazia
 void gravarPacientes(struct Paciente **inicio)
 {
     if (*inicio == NULL)
@@ -181,6 +189,7 @@ void gravarPacientes(struct Paciente **inicio)
     fclose(arqv);
 }
 
+//grava um paciente no final da fila
 void gravarPaciente(struct Paciente **inicio)
 {
     if (*inicio == NULL)
@@ -195,24 +204,28 @@ void gravarPaciente(struct Paciente **inicio)
         p1 = p1->prox;
     }
     // é o ultimo da fila
-    fwrite(p1->nome, sizeof(p1->nome), 1, arqv);
+    fwrite(p1->nome, MAX_NOME, 1, arqv);
     fwrite(&(p1->id), sizeof(p1->id), 1, arqv);
 
     fclose(arqv);
 }
-
 void destroiPaciente(struct Paciente **inicio)
 {
-    struct Paciente *p1 = (*inicio)->prox,*p2;
-    free(*inicio);
-    *inicio = NULL;
-    // vai até o final da fila
-    while (p1->prox != NULL)
-    {
-        p2 = p1;
-        p1 = p1->prox;
-        free(p2);
+    if (inicio == NULL || *inicio == NULL) {
+        return; 
     }
+
+    struct Paciente *atual = *inicio;
+    struct Paciente *proximo;
+
+    while (atual != NULL)
+    {
+        proximo = atual->prox; 
+        free(atual);           
+        atual = proximo;       
+    }
+
+    *inicio = NULL;
 }
 // TODO logs
 void lerPaciente(struct Paciente **inicio)
@@ -221,18 +234,21 @@ void lerPaciente(struct Paciente **inicio)
     // isso conta que o inicio esta vazio
     // faz o primeiro ponteiro
     *inicio = malloc(sizeof(struct Paciente));
-    fread((*inicio)->nome, sizeof((*inicio)->nome), 1, arqv);
+    fread((*inicio)->nome, MAX_NOME, 1, arqv);
     fread(&((*inicio)->id), sizeof(int), 1, arqv);
 
     printf("\nlido nome: %s id %d", (*inicio)->nome, (*inicio)->id);
 
     struct Paciente *p1 = *inicio;
-    while (arqv != NULL)
+    char nome[MAX_NOME];
+    int id;
+    while (fread(nome, MAX_NOME, 1, arqv) == 1)
     {
-        struct Paciente *novo = malloc(sizeof(struct Paciente));
-        fread(novo->nome, sizeof(novo->nome), 1, arqv);
-        fread(&(novo->id), sizeof(int), 1, arqv);
+        fread(&id, sizeof(int), 1, arqv);
 
+        struct Paciente *novo = malloc(sizeof(struct Paciente));
+        strcpy(novo->nome,nome);
+        novo->id = id;
         printf("\nlido nome: %s id %d", novo->nome, novo->id);
         fflush(stdout);
         sleep(1);
@@ -486,6 +502,7 @@ int main(int argc, char **argv)
                     break;
 
                 case 1:
+                    // FIXME nao e possivel colocar nomes com espaço
                     char novoNome[MAX_NOME], novoID[MAX_NOME];
                     receber(novo_socket, novoNome, MAX_NOME);
                     receber(novo_socket, novoID, MAX_NUMERO);

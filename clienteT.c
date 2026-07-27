@@ -12,7 +12,7 @@
 #define MAX_SENHA 20
 #define MAX_BUF 25
 #define MAX_NUMERO 10
-#define MAX_STRING 100
+#define MAX_STRING 500
 #define true 1
 
 // XXX cuidado para colcar o mesmo tamanho ao enviar e receber
@@ -28,8 +28,9 @@ void receber(int socket, char *buffer, int tam)
     int leitor = recv(socket, buffer, tam, 0);
     if (leitor <= 0)
     {
+        //
         perror("receber");
-        close(socket);
+        //close(socket);
         printf("\nsocket %d fechado à força", socket);
     }
     else
@@ -81,7 +82,7 @@ void funcao_filhos(int num_filhos)
     // sock stream e tcp
     // sock dgram e udp
     sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    bind(sock, (const struct sockaddr *)&sAddr, sizeof(sAddr));
+    //bind(sock, (const struct sockaddr *)&sAddr, sizeof(sAddr));
 
     // conectar ao servidor que estiver rodando localmente
     sAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
@@ -98,7 +99,7 @@ void funcao_filhos(int num_filhos)
     // deu tudo certo
     send(sock, buffer, MAX_BUF, 0);
 
-    // recebe a merda q ele mandou
+    // recebe o q ele mandou
     receber(sock, buffer, MAX_BUF);
 
     printf("\nConectado ao servidor");
@@ -195,11 +196,13 @@ void funcao_filhos(int num_filhos)
             send(sock, resp, 2, 0);
 
             // esperar
-            //char status[10];
-            receber(sock, status, 10);
-            printf("\n%s", status);
+            //de alguma forma, o erro era eu tentanto reusar o status
+            char alive[10];
+            sleep(1);
+            receber(sock, alive, 10);
+            printf("\n%s", alive);
 
-            if (strcmp(status, "ALIVE") == 0)
+            if (strcmp(alive, "ALIVE") == 0)
             {
                 printf("\nALIVE");
             }
