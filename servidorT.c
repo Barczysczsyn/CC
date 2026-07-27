@@ -103,49 +103,50 @@ void historico(int comando, char string1[MAX_NOME], char string2[MAX_NOME])
     fclose(arqv);
 }
 
-void sessao(char *s, int comando, char string1[MAX_NOME], char string2[MAX_NOME])
+void sessao(char nome[MAX_NOME], time_t duracao)
 {
-    printf("\nsessao");
-    char temp[MAX_STRING];
+    //printf("duracao %lf",((double)duracao / CLOCKS_PER_SEC));
+    char tempo[25];
+    getTempo(tempo);
+
+    // por enquanto so salva o tempo de uso
+    FILE *arqv = fopen(ARQV_SESSAO, "a");
+    fprintf(arqv, "\n%s:usuario %s usou o sistema por %ld segundos", tempo, nome, duracao);
+    fclose(arqv);
+}
+
+void logs(int comando, char string1[MAX_NOME], char string2[MAX_NOME])
+{
     // a é modo append
+    FILE *arqv = fopen(ARQV_LOGS, "a");
     char tempo[25];
     getTempo(tempo);
     switch (comando)
     {
     case 0:
 
-        sprintf(temp, "\n%s:usuario %s saiu do sistema", tempo, string1);
-        strcat(s, temp);
+        fprintf(arqv, "\n%s:usuario %s nao pôde enviar a entrada e foi desconectado à força", tempo, string1);
+
         break;
     case 1:
-        sprintf(temp, "\n%s:usuario %s inseriu o paciente %s na fila", tempo, string1, string2);
-        strcat(s, temp);
-        break;
-    case 2:
-        sprintf(temp, "\n%s:usuario %s abriu a fila", tempo, string1);
-        strcat(s, temp);
+
+        fprintf(arqv, "\n%s:usuario %s nao conseguiu inserir o paciente %s", tempo, string1,string2);
 
         break;
-    case 3:
-        sprintf(temp, "\n%s:usuario %s executou heartbeat", tempo, string1);
+    case 52:
 
-        strcat(s, temp);
-        break;
-    // usuario entrou
-    case 4:
-        sprintf(temp, "\n%s:usuario %s entrou no sistema", tempo, string1);
-
-        strcat(s, temp);
+        fprintf(arqv, "\n%s:usuario %s causou o erro desconhecido", tempo, string1);
 
         break;
 
     default:
         break;
     }
+    fclose(arqv);
 }
 
 // funcao pra encapsular recebimento de mensagens
-//FIXME possivel overflow
+// FIXME possivel overflow
 int receber(int socket, char *buffer, int tam)
 {
     // printf("tam %lu",strlen(buffer));
@@ -167,7 +168,7 @@ int receber(int socket, char *buffer, int tam)
     }
 }
 
-//grava todos os pacientes em uma fila vazia
+// grava todos os pacientes em uma fila vazia
 void gravarPacientes(struct Paciente **inicio)
 {
     if (*inicio == NULL)
@@ -189,7 +190,7 @@ void gravarPacientes(struct Paciente **inicio)
     fclose(arqv);
 }
 
-//grava um paciente no final da fila
+// grava um paciente no final da fila
 void gravarPaciente(struct Paciente **inicio)
 {
     if (*inicio == NULL)
@@ -211,8 +212,9 @@ void gravarPaciente(struct Paciente **inicio)
 }
 void destroiPaciente(struct Paciente **inicio)
 {
-    if (inicio == NULL || *inicio == NULL) {
-        return; 
+    if (inicio == NULL || *inicio == NULL)
+    {
+        return;
     }
 
     struct Paciente *atual = *inicio;
@@ -220,9 +222,9 @@ void destroiPaciente(struct Paciente **inicio)
 
     while (atual != NULL)
     {
-        proximo = atual->prox; 
-        free(atual);           
-        atual = proximo;       
+        proximo = atual->prox;
+        free(atual);
+        atual = proximo;
     }
 
     *inicio = NULL;
@@ -247,11 +249,11 @@ void lerPaciente(struct Paciente **inicio)
         fread(&id, sizeof(int), 1, arqv);
 
         struct Paciente *novo = malloc(sizeof(struct Paciente));
-        strcpy(novo->nome,nome);
+        strcpy(novo->nome, nome);
         novo->id = id;
-        printf("\nlido nome: %s id %d", novo->nome, novo->id);
-        fflush(stdout);
-        sleep(1);
+        //printf("\nlido nome: %s id %d", novo->nome, novo->id);
+        //fflush(stdout);
+        //sleep(1);
 
         p1->prox = novo;
         p1 = p1->prox;
@@ -440,9 +442,7 @@ int main(int argc, char **argv)
 
             /// XXX comeca o meu codigo
 
-            /// cria a string pra salvar a sessao
-            char s[MAX_STRING];
-            // TODO colocar na sessao quando o socket é conectado?
+            time_t inicio = time(NULL);
 
             // recebe e envia a confirmacao de conexao
             receber(novo_socket, buffer, 25);
@@ -478,15 +478,17 @@ int main(int argc, char **argv)
             printf("\nusuario %s entrou no sistema", nom);
 
             // sessao
-            sessao(s, 4, nom, NULL);
             // while principal
             do
             {
                 // recebe uma string q é só um numero
                 if (receber(novo_socket, buffer, 2))
+                {
                     // se esse receber der erro ele sai do laço
                     // TODO essa verificação é boa, mas talvez deveria colocar em mais lugares
+                    logs(0, nom, NULL);
                     break;
+                }
                 // printf("\nentrada %s", buffer);
                 //  converte essa string pra um numero int
                 int resp = buffer[0] - '0';
@@ -497,7 +499,6 @@ int main(int argc, char **argv)
                     // sem o case 0 ele buga forte
                     printf("\n filho #%i desconectou.", getpid());
                     historico(0, nom, NULL);
-                    sessao(s, 0, nom, NULL);
                     sleep(1);
                     break;
 
@@ -519,10 +520,12 @@ int main(int argc, char **argv)
                         printf("\npaciente %s não pôde ser inserido", novoNome);
                         strcpy(status, "fracasso");
                         send(novo_socket, status, 25, 0);
+
+
+                    logs(1,nom,novoNome);
                     }
                     // nom é o nome do usuario atual
                     historico(1, nom, novoNome);
-                    sessao(s, 1, nom, novoNome);
                     // TODO continuar
                     gravarPaciente(&pacientes);
                     fflush(stdout);
@@ -534,7 +537,6 @@ int main(int argc, char **argv)
                     send(novo_socket, string, MAX_STRING, 0);
                     // printf("string: %s", string);
                     historico(2, nom, NULL);
-                    sessao(s, 2, nom, NULL);
                     break;
 
                 case 3:
@@ -576,26 +578,30 @@ int main(int argc, char **argv)
                     }
 
                     historico(3, nom, NULL);
-                    sessao(s, 3, nom, NULL);
                     break;
 
                 default:
                     // isso basicamente não vai acontecer, pq já tem proteção contra isso do lado do cliente
                     printf("erro desconhecido, entrada %d.", resp);
                     perror("erro desconhecido");
+                    logs(52, nom, NULL);
                     break;
                 }
                 sleep(1);
             } while (buffer[0] != '0');
             // if (strcmp(buffer, "exit") == 0)
+            time_t fim = time(NULL);
+
+
+            sessao(nom, (fim - inicio));
+            // acaba o filho
+
             close(novo_socket);
             // essa ultima linha só é alcançada no processo pai, uma vez que o processo filho tem uma cópia do socket cliente, o processo pai
             // faz a sua referência e decrementa o contador no kernel
             // printf("\nprocesso filho #%i terminado.", getpid());
+
             exit(0);
-            // gravar na sessão
-            FILE *sess = fopen(ARQV_SESSAO, "a");
-            fprintf(sess, "%s", s);
             // fclose(sess);
         }
         close(novo_socket);
