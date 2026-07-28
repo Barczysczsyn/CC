@@ -23,14 +23,13 @@
 #define MAX_NUMERO 10
 
 #define ARQV_PACIENTE "bd_pacientes"
-#define ARQV_USUARIOS "bd_usuario"
+// #define ARQV_USUARIOS "bd_usuario"
 
 #define ARQV_HISTORICO "bd_historico"
 #define ARQV_SESSAO "bd_sessao"
-//[x] oq é um log? como isso se diferencia de sessao?
 #define ARQV_LOGS "bd_logs"
 
-//[ ] como diabos se cadastra usuario?
+//[x] como diabos se cadastra usuario?
 //[x] como consulta o historico, logs e sessoes? isso é feito pelo servidor ou cliente?
 //[x] como funciona o heartbeat?
 //[ ] o ver fila faz broadcast? isso é a retransmissão de mensagens?
@@ -47,11 +46,11 @@ struct Paciente
     int id;
     struct Paciente *prox;
 };
-struct Usuario
-{
-    char nome[MAX_NOME];
-    char senha[MAX_NOME];
-};
+// struct Usuario
+// {
+//     char nome[MAX_NOME];
+//     char senha[MAX_NOME];
+// };
 
 void getTempo(char *string)
 {
@@ -148,7 +147,6 @@ void logs(int comando, char string1[MAX_NOME], char string2[MAX_NOME])
 int receber(int socket, char *buffer, int tam)
 {
     // printf("tam %lu",strlen(buffer));
-    // fflush(stdout);
     int leitor = recv(socket, buffer, tam, 0);
     if (leitor <= 0)
     {
@@ -156,8 +154,9 @@ int receber(int socket, char *buffer, int tam)
         //  ele ficava recebendo eternamente de qualquer jeito
         // precisava dar um jeito de setar o resp para 0 daqui
         //[ ] porque eu comentei?
-         close(socket);
+        close(socket);
         printf("\nsocket %d será fechado à força", socket);
+        fflush(stdout);
         return 1;
     }
     else
@@ -209,7 +208,7 @@ void gravarPaciente(struct Paciente **inicio)
 
     fclose(arqv);
 }
-//limpa a fila e libera a memória
+// limpa a fila e libera a memória
 void destroiPaciente(struct Paciente **inicio)
 {
     if (inicio == NULL || *inicio == NULL)
@@ -230,10 +229,12 @@ void destroiPaciente(struct Paciente **inicio)
     *inicio = NULL;
 }
 
-//le o arquivo e coloca os pacientes na lista encadeada
+// le o arquivo e coloca os pacientes na lista encadeada
 void lerPaciente(struct Paciente **inicio)
 {
     FILE *arqv = fopen(ARQV_PACIENTE, "r");
+    if (arqv == NULL)
+        return;
     // isso conta que o inicio esta vazio
     // faz o primeiro ponteiro
     *inicio = malloc(sizeof(struct Paciente));
@@ -252,8 +253,8 @@ void lerPaciente(struct Paciente **inicio)
         struct Paciente *novo = malloc(sizeof(struct Paciente));
         strcpy(novo->nome, nome);
         novo->id = id;
-        // printf("\nlido nome: %s id %d", novo->nome, novo->id);
-        // fflush(stdout);
+        printf("\nlido nome: %s id %d", novo->nome, novo->id);
+        fflush(stdout);
         // sleep(1);
 
         p1->prox = novo;
@@ -261,7 +262,8 @@ void lerPaciente(struct Paciente **inicio)
     }
     fclose(arqv);
 }
-//escreve todos os usuarios no arquivo binario
+/*
+// escreve todos os usuarios no arquivo binario
 void gravarUsuario(struct Usuario *usuarios, int quant)
 {
     FILE *arqv = fopen(ARQV_USUARIOS, "w");
@@ -278,7 +280,7 @@ void gravarUsuario(struct Usuario *usuarios, int quant)
     fclose(arqv);
 }
 
-//le o arquivo binario e coloca todos os usuarios no vetor
+// le o arquivo binario e coloca todos os usuarios no vetor
 int lerUsuario(struct Usuario *usuarios)
 {
     int i = 0;
@@ -299,8 +301,8 @@ int lerUsuario(struct Usuario *usuarios)
     fclose(arqv);
     return i;
 }
-
-//insere um paciente no final da fila
+*/
+// insere um paciente no final da fila
 int inserirPaciente(int id, char nome[MAX_NOME], struct Paciente **inicio)
 {
     // retorna 1 se funcionou
@@ -332,7 +334,7 @@ int inserirPaciente(int id, char nome[MAX_NOME], struct Paciente **inicio)
     return 1;
 }
 
-//coloca a fila toda numa string
+// coloca a fila toda numa string
 int verFila(struct Paciente *inicio, char string[MAX_STRING])
 {
     if (inicio == NULL)
@@ -415,10 +417,9 @@ int main(int argc, char **argv)
     signal(SIGCHLD, sigchld_handler);
 
     struct Paciente *pacientes;
-    // TODO aumentar
-    struct Usuario usuarios[10000];
+    // struct Usuario usuarios[10000];
 
-    int quantUsuarios = lerUsuario(usuarios);
+    // int quantUsuarios = lerUsuario(usuarios);
 
     // //insercao é feita assim por enquanto
     // strcpy(usuarios[1].nome, "artur");
@@ -460,16 +461,9 @@ int main(int argc, char **argv)
             receber(novo_socket, nom, MAX_NOME);
             receber(novo_socket, sen, MAX_NOME);
 
-            // checa toda a lista de usuarios para ver se encontra esse
-            for (int i = 0; i < quantUsuarios; i++)
-            {
-                if ((strcmp(nom, usuarios[i].nome) == 0) && (strcmp(sen, usuarios[i].senha) == 0))
-                {
-                    encontrado = 1;
-                }
-            }
-
-            if (encontrado == 0)
+            // checa
+            // essa versao tem um nome e senha especifico
+            if ((strcmp(nom, "joao") != 0) || (strcmp(sen, "123") != 0))
             {
                 strcpy(buffer, "nao encontrado");
                 send(novo_socket, buffer, 25, 0);
@@ -490,7 +484,7 @@ int main(int argc, char **argv)
             do
             {
                 // recebe uma string q é só um numero
-                if (receber(novo_socket, buffer, 2))
+                if (receber(novo_socket, buffer, 4))
                 {
                     // se esse receber der erro ele sai do laço
                     // TODO essa verificação é boa, mas talvez deveria colocar em mais lugares
@@ -511,7 +505,7 @@ int main(int argc, char **argv)
                     break;
 
                 case 1:
-                    char novoNome[MAX_NOME], novoID[MAX_NOME];
+                    char novoNome[MAX_NOME], novoID[MAX_NUMERO];
                     receber(novo_socket, novoNome, MAX_NOME);
                     receber(novo_socket, novoID, MAX_NUMERO);
                     char status[10];
@@ -550,7 +544,6 @@ int main(int argc, char **argv)
                     verFila(pacientes, string1);
 
                     // pega a fila do arquivo, que esta sempre atualizada
-                    //[ ] testar isso tbm
                     destroiPaciente(&pacientes);
                     lerPaciente(&pacientes);
                     char string2[MAX_STRING];
@@ -613,4 +606,3 @@ int main(int argc, char **argv)
 
     return 0;
 }
-//[x] sessao em um arquivo so ou em vários?

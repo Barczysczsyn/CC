@@ -15,8 +15,6 @@
 #define MAX_STRING 500
 #define true 1
 
-// XXX cuidado para colcar o mesmo tamanho ao enviar e receber
-
 void funcao_filhos(int num_filhos);
 
 // funcao pra encapsular recebimento de mensagens
@@ -106,7 +104,7 @@ void funcao_filhos(int num_filhos)
     printf("\nConectado ao servidor");
     fflush(stdout);
 
-    char nome[MAX_NOME], senha[MAX_SENHA];
+    char nome[MAX_NOME], senha[MAX_NOME];
 
     // autenticacao
     //[x] o cliente precisa de autenticacao, ou é só o servidor?
@@ -138,7 +136,8 @@ void funcao_filhos(int num_filhos)
     printf("\nTela principal: ");
     fflush(stdout);
 
-    int resposta;
+    //so pra nao ser 0 
+    int resposta = 5;
 
     // quando tudo estiver pronto
     while (resposta != 0)
@@ -148,10 +147,10 @@ void funcao_filhos(int num_filhos)
 
         switch (resposta)
         {
-            char resp[2];
+            char resp[4];
         case 0:
             strcpy(resp, "0");
-            send(sock, resp, 2, 0);
+            send(sock, resp, 4, 0);
             printf("\nSaindo...");
             sleep(1);
             break;
@@ -159,7 +158,8 @@ void funcao_filhos(int num_filhos)
             // envia pro servidor pra ele preparar
             // ao colocar isso antes dos scanfs o problema parece ter sido resolvido
             strcpy(resp, "1");
-            send(sock, resp, 2, 0);
+            //a resposta ser 4 aumenta a chance de ser enviada corretamente
+            send(sock, resp, 4, 0);
 
             char id[MAX_NUMERO];
             char nome[MAX_NOME];
@@ -184,14 +184,14 @@ void funcao_filhos(int num_filhos)
             send(sock, id, MAX_NUMERO, 0);
 
             char status[26];
-            receber(sock, buffer, MAX_BUF);
-            if (strcmp(buffer, "sucesso") == 0)
+            receber(sock, status, MAX_BUF);
+            if (strcmp(status, "sucesso") == 0)
             {
                 printf("\npaciente %s inserido com sucesso", nome);
             }
             else
             {
-                printf("\npaciente %s não pôde ser inserido:%s", nome, buffer);
+                printf("\npaciente %s não pôde ser inserido:%s", nome, status);
             }
 
             break;
@@ -199,7 +199,7 @@ void funcao_filhos(int num_filhos)
         case 2:
 
             strcpy(resp, "2");
-            send(sock, resp, 2, 0);
+            send(sock, resp, 4, 0);
 
             char string[MAX_STRING];
             receber(sock, string, MAX_STRING);
@@ -208,7 +208,7 @@ void funcao_filhos(int num_filhos)
         case 3:
 
             strcpy(resp, "3");
-            send(sock, resp, 2, 0);
+            send(sock, resp, 4, 0);
 
             // esperar
             // de alguma forma, o erro era eu tentanto reusar o status
