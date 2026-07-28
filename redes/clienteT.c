@@ -16,7 +16,6 @@
 #define true 1
 
 // XXX cuidado para colcar o mesmo tamanho ao enviar e receber
-// [ ] o cliente tem q guardar a sua fila em arquivo tbm?
 
 void funcao_filhos(int num_filhos);
 
@@ -32,7 +31,7 @@ void receber(int socket, char *buffer, int tam)
         //
         perror("receber");
         // close(socket);
-        //FIXME acontece muitas vezes
+        // FIXME acontece muitas vezes
         printf("\nsocket %d fechado à força", socket);
     }
     else
@@ -110,7 +109,7 @@ void funcao_filhos(int num_filhos)
     char nome[MAX_NOME], senha[MAX_SENHA];
 
     // autenticacao
-    //[ ] o cliente precisa de autenticacao, ou é só o servidor?
+    //[x] o cliente precisa de autenticacao, ou é só o servidor?
     char aut[25];
     // do
     // {
@@ -165,10 +164,11 @@ void funcao_filhos(int num_filhos)
             char id[MAX_NUMERO];
             char nome[MAX_NOME];
             printf("\nID:");
+            // TODO nao tem verificacao pra ver se o novo id é um numero
+            // se nao for ele coloca 0
             scanf("%s", id);
             printf("\nNome:");
             // scanf("%s", nome);
-
 
             // le o \n para que o fgets nao seja pulado,
             // TODO má pratica
@@ -176,8 +176,8 @@ void funcao_filhos(int num_filhos)
             while ((c = getchar()) != '\n' && c != EOF)
                 ;
             fgets(nome, MAX_NOME, stdin);
-            //tira o \n do final
-            nome[strlen(nome)-1] = '\0';
+            // tira o \n do final
+            nome[strlen(nome) - 1] = '\0';
 
             // sleep(1);
             send(sock, nome, MAX_NOME, 0);
@@ -228,14 +228,6 @@ void funcao_filhos(int num_filhos)
                 printf("\n%s", string);
             }
             break;
-        // TODO tirar isso no final ne
-        case 67:
-            system("xdg-open https://www.youtube.com/watch?v=9OfgrpnXAuY");
-            break;
-        // TODO tirar isso no final ne
-        case 69:
-            system("xdg-open https://www.youtube.com/watch?v=FCG494Acmlw&list=PLAeYBBpitJjlr58DO0Yl7Jz4DATEFDUfK&index=67");
-            break;
         default:
             printf("\nEntrada desconhecida.");
             break;
@@ -246,7 +238,10 @@ void funcao_filhos(int num_filhos)
 
     close(sock);
 }
-/// HACK todo cliente tem uma fila em si, que é atualizada quando o cliente é iniciado
-// heartbeat faz o servidor enviar primeiro a quantidade de elementos na fila, depois é enviado cada um deles
-// ao chegar eles sao reencadeados e a lista é comparada com a do cliente
-// se houver algum diferente a fila inteira é imprimida PORQUE É ASSIM QUE ESTÁ NO EXEMPLO
+
+//HACK o heartbeat envia o codigo 3 pro servidor, que manda quantos pacientes há em sua fila
+//se o numero for igual, ele assume que a fila esta atualizada, senão, ele
+//faz o broadcast com a fila inteira de pacientes
+//os clientes estão todos sempre ouvindo o broadcast pra isso funcionar
+//so que para isso funcionar, a fila tem que estar salva no cliente
+//pois no meu codigo atual, ela so esta salva no socket do servidor de tal cliente
