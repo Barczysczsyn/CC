@@ -148,6 +148,8 @@ void funcao_filhos(int num_filhos)
         switch (resposta)
         {
             char resp[4];
+            //nao pode declarar variaveis locais nos cases
+            char string[MAX_STRING];
         case 0:
             strcpy(resp, "0");
             send(sock, resp, 4, 0);
@@ -200,8 +202,6 @@ void funcao_filhos(int num_filhos)
 
             strcpy(resp, "2");
             send(sock, resp, 4, 0);
-
-            char string[MAX_STRING];
             receber(sock, string, MAX_STRING);
             printf("\n%s", string);
             break;
@@ -211,11 +211,11 @@ void funcao_filhos(int num_filhos)
             send(sock, resp, 4, 0);
 
             // esperar
-            // de alguma forma, o erro era eu tentanto reusar o status
-            char alive[10];
+            char alive[11];
             sleep(1);
             receber(sock, alive, 10);
             // printf("\n%s", alive);
+            sleep(1);
 
             if (strcmp(alive, "ALIVE") == 0)
             {
@@ -223,7 +223,10 @@ void funcao_filhos(int num_filhos)
             }
             else
             {
-                char string[MAX_STRING];
+                //precisa enviar alguma coisa
+                strcpy(alive,"DEAD");
+                send(sock,alive,10,0);
+                //char string[MAX_STRING];
                 receber(sock, string, MAX_STRING);
                 printf("\n%s", string);
             }

@@ -52,6 +52,7 @@ struct Paciente
 //     char senha[MAX_NOME];
 // };
 
+// armazena a data e hora atual numa string formatada
 void getTempo(char *string)
 {
 
@@ -64,8 +65,8 @@ void getTempo(char *string)
     // tira o \n do final
     string[strlen(string) - 1] = '\0';
 }
-// outras coisas q precisa
 
+// guarda o historico no arquivo
 void historico(int comando, char string1[MAX_NOME], char string2[MAX_NOME])
 {
     // a é modo append
@@ -100,6 +101,7 @@ void historico(int comando, char string1[MAX_NOME], char string2[MAX_NOME])
     fclose(arqv);
 }
 
+// guarda a sessao no arquivo
 void sessao(char nome[MAX_NOME], time_t duracao)
 {
     // printf("duracao %lf",((double)duracao / CLOCKS_PER_SEC));
@@ -112,6 +114,7 @@ void sessao(char nome[MAX_NOME], time_t duracao)
     fclose(arqv);
 }
 
+// guarda os logs no arquivo
 void logs(int comando, char string1[MAX_NOME], char string2[MAX_NOME])
 {
     // a é modo append
@@ -417,6 +420,7 @@ int main(int argc, char **argv)
     signal(SIGCHLD, sigchld_handler);
 
     struct Paciente *pacientes;
+
     // struct Usuario usuarios[10000];
 
     // int quantUsuarios = lerUsuario(usuarios);
@@ -478,6 +482,9 @@ int main(int argc, char **argv)
             send(novo_socket, buffer, 25, 0);
 
             printf("\nusuario %s entrou no sistema", nom);
+
+            // atualiza a fila de pacientes antes de tudo
+            lerPaciente(&pacientes);
 
             // sessao
             // while principal
@@ -561,6 +568,8 @@ int main(int argc, char **argv)
                         // qual o contrario de alive?
                         strcpy(status, "DEAD");
                         send(novo_socket, status, 10, 0);
+                        //precisa receber alguma coisa
+                        receber(novo_socket,status,10);
                         /*
                         sprintf(status, "%d", tam);
                         send(novo_socket, status, 10, 0);
