@@ -31,8 +31,8 @@
 #define ARQV_LOGS "bd_logs"
 
 //[ ] como diabos se cadastra usuario?
-//[x] como consulta o historico, logs e sessoes? isso é feito pelo servidor ou cliente?
-//[x] como funciona o heartbeat?
+//[ ] como consulta o historico, logs e sessoes? isso é feito pelo servidor ou cliente?
+//[ ] como funciona o heartbeat?
 //[ ] o ver fila faz broadcast? isso é a retransmissão de mensagens?
 // TODO ele consegue receber 10000 clientes, so nao sei se é ao mesmo tempo
 // lista encadeada de pacientes
@@ -144,7 +144,6 @@ void logs(int comando, char string1[MAX_NOME], char string2[MAX_NOME])
 }
 
 // funcao pra encapsular recebimento de mensagens
-// FIXME possivel overflow
 int receber(int socket, char *buffer, int tam)
 {
     // printf("tam %lu",strlen(buffer));
@@ -155,8 +154,7 @@ int receber(int socket, char *buffer, int tam)
         perror("receber");
         //  ele ficava recebendo eternamente de qualquer jeito
         // precisava dar um jeito de setar o resp para 0 daqui
-        //[ ] porque eu comentei?
-         close(socket);
+        // close(socket);
         printf("\nsocket %d será fechado à força", socket);
         return 1;
     }
@@ -209,7 +207,6 @@ void gravarPaciente(struct Paciente **inicio)
 
     fclose(arqv);
 }
-//limpa a fila e libera a memória
 void destroiPaciente(struct Paciente **inicio)
 {
     if (inicio == NULL || *inicio == NULL)
@@ -230,7 +227,6 @@ void destroiPaciente(struct Paciente **inicio)
     *inicio = NULL;
 }
 
-//le o arquivo e coloca os pacientes na lista encadeada
 void lerPaciente(struct Paciente **inicio)
 {
     FILE *arqv = fopen(ARQV_PACIENTE, "r");
@@ -240,7 +236,7 @@ void lerPaciente(struct Paciente **inicio)
     fread((*inicio)->nome, MAX_NOME, 1, arqv);
     fread(&((*inicio)->id), sizeof(int), 1, arqv);
 
-    printf("\nlido nome: %s id %d", (*inicio)->nome, (*inicio)->id);
+    // printf("\nlido nome: %s id %d", (*inicio)->nome, (*inicio)->id);
 
     struct Paciente *p1 = *inicio;
     char nome[MAX_NOME];
@@ -261,7 +257,6 @@ void lerPaciente(struct Paciente **inicio)
     }
     fclose(arqv);
 }
-//escreve todos os usuarios no arquivo binario
 void gravarUsuario(struct Usuario *usuarios, int quant)
 {
     FILE *arqv = fopen(ARQV_USUARIOS, "w");
@@ -278,7 +273,6 @@ void gravarUsuario(struct Usuario *usuarios, int quant)
     fclose(arqv);
 }
 
-//le o arquivo binario e coloca todos os usuarios no vetor
 int lerUsuario(struct Usuario *usuarios)
 {
     int i = 0;
@@ -291,7 +285,7 @@ int lerUsuario(struct Usuario *usuarios)
     {
         fread(usuarios[i].senha, MAX_NOME, 1, arqv);
 
-        printf("\nlido nome: %s senha %s", usuarios[i].nome, usuarios[i].senha);
+        // printf("\nlido nome: %s senha %s", usuarios[i].nome, usuarios[i].senha);
 
         i++;
     }
@@ -300,7 +294,6 @@ int lerUsuario(struct Usuario *usuarios)
     return i;
 }
 
-//insere um paciente no final da fila
 int inserirPaciente(int id, char nome[MAX_NOME], struct Paciente **inicio)
 {
     // retorna 1 se funcionou
@@ -332,7 +325,6 @@ int inserirPaciente(int id, char nome[MAX_NOME], struct Paciente **inicio)
     return 1;
 }
 
-//coloca a fila toda numa string
 int verFila(struct Paciente *inicio, char string[MAX_STRING])
 {
     if (inicio == NULL)
@@ -460,16 +452,7 @@ int main(int argc, char **argv)
             receber(novo_socket, nom, MAX_NOME);
             receber(novo_socket, sen, MAX_NOME);
 
-            // checa toda a lista de usuarios para ver se encontra esse
-            for (int i = 0; i < quantUsuarios; i++)
-            {
-                if ((strcmp(nom, usuarios[i].nome) == 0) && (strcmp(sen, usuarios[i].senha) == 0))
-                {
-                    encontrado = 1;
-                }
-            }
-
-            if (encontrado == 0)
+            if ((strcmp(nom, "joao") != 0) || (strcmp(sen, "123") != 0))
             {
                 strcpy(buffer, "nao encontrado");
                 send(novo_socket, buffer, 25, 0);
@@ -511,8 +494,10 @@ int main(int argc, char **argv)
                     break;
 
                 case 1:
+                    // FIXME nao e possivel colocar nomes com espaço
                     char novoNome[MAX_NOME], novoID[MAX_NOME];
                     receber(novo_socket, novoNome, MAX_NOME);
+                    // TODO nao tem verificacao pra ver se o novo id é um numero
                     receber(novo_socket, novoID, MAX_NUMERO);
                     char status[10];
                     if (inserirPaciente(atoi(novoID), novoNome, &pacientes))
@@ -561,7 +546,9 @@ int main(int argc, char **argv)
                     if (strcmp(string1, string2) == 0)
                     {
                         strcpy(status, "ALIVE");
+                        status[5] = '\0';
                         send(novo_socket, status, 10, 0);
+                        send(novo_socket, string2, MAX_STRING, 0);
                     }
                     else
                     {

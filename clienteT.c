@@ -16,10 +16,12 @@
 #define true 1
 
 // XXX cuidado para colcar o mesmo tamanho ao enviar e receber
+// [ ] o cliente tem q guardar a sua fila em arquivo tbm?
 
 void funcao_filhos(int num_filhos);
 
 // funcao pra encapsular recebimento de mensagens
+// FIXME possivel overflow
 void receber(int socket, char *buffer, int tam)
 {
     // printf("tam %lu",strlen(buffer));
@@ -30,6 +32,7 @@ void receber(int socket, char *buffer, int tam)
         //
         perror("receber");
         // close(socket);
+        // FIXME acontece muitas vezes
         printf("\nsocket %d fechado à força", socket);
     }
     else
@@ -104,10 +107,10 @@ void funcao_filhos(int num_filhos)
     printf("\nConectado ao servidor");
     fflush(stdout);
 
-    char nome[MAX_NOME], senha[MAX_NOME];
+    char nome[MAX_NOME], senha[MAX_SENHA];
 
     // autenticacao
-    //[x] o cliente precisa de autenticacao, ou é só o servidor?
+    //[ ] o cliente precisa de autenticacao, ou é só o servidor?
     char aut[25];
     // do
     // {
@@ -136,6 +139,7 @@ void funcao_filhos(int num_filhos)
     printf("\nTela principal: ");
     fflush(stdout);
 
+    //so pra nao ser 0
     int resposta = 5;
 
     // quando tudo estiver pronto
@@ -147,6 +151,7 @@ void funcao_filhos(int num_filhos)
         switch (resposta)
         {
             char resp[2];
+            char string[MAX_STRING];
         case 0:
             strcpy(resp, "0");
             send(sock, resp, 2, 0);
@@ -162,8 +167,6 @@ void funcao_filhos(int num_filhos)
             char id[MAX_NUMERO];
             char nome[MAX_NOME];
             printf("\nID:");
-            // TODO nao tem verificacao pra ver se o novo id é um numero
-            // se nao for ele coloca 0
             scanf("%s", id);
             printf("\nNome:");
             // scanf("%s", nome);
@@ -199,7 +202,6 @@ void funcao_filhos(int num_filhos)
             strcpy(resp, "2");
             send(sock, resp, 2, 0);
 
-            char string[MAX_STRING];
             receber(sock, string, MAX_STRING);
             printf("\n%s", string);
             break;
@@ -217,11 +219,11 @@ void funcao_filhos(int num_filhos)
 
             if (strcmp(alive, "ALIVE") == 0)
             {
+                receber(sock, string, MAX_STRING);
                 printf("\nALIVE");
             }
             else
             {
-                char string[MAX_STRING];
                 receber(sock, string, MAX_STRING);
                 printf("\n%s", string);
             }
@@ -236,5 +238,7 @@ void funcao_filhos(int num_filhos)
 
     close(sock);
 }
-
-//HACK o heartbeat envia o codigo 3 pro servidor, que manda quantos pacientes há em sua fila
+/// HACK todo cliente tem uma fila em si, que é atualizada quando o cliente é iniciado
+// heartbeat faz o servidor enviar primeiro a quantidade de elementos na fila, depois é enviado cada um deles
+// ao chegar eles sao reencadeados e a lista é comparada com a do cliente
+// se houver algum diferente a fila inteira é imprimida PORQUE É ASSIM QUE ESTÁ NO EXEMPLO
