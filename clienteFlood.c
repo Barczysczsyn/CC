@@ -88,7 +88,7 @@ void funcao_filhos(int num_filhos)
 
     // enviar alguma coisa ao servidor
     // snprintf(buffer, 128, "dados do cliente #%i.", num_filhos);
-    //TODO  ele só tenta o mesmo usuario sempre
+    //TODO ele só tenta o mesmo usuario sempre
     send(sock,"opa",25,0);
     sleep(1);
     send(sock,"joao",50,0);
