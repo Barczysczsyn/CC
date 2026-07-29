@@ -27,20 +27,11 @@
 
 #define ARQV_HISTORICO "bd_historico"
 #define ARQV_SESSAO "bd_sessao"
-//[x] oq é um log? como isso se diferencia de sessao?
 #define ARQV_LOGS "bd_logs"
 
-//[ ] como diabos se cadastra usuario?
-//[x] como consulta o historico, logs e sessoes? isso é feito pelo servidor ou cliente?
-//[x] como funciona o heartbeat?
-//[ ] o ver fila faz broadcast? isso é a retransmissão de mensagens?
-// TODO ele consegue receber 10000 clientes, so nao sei se é ao mesmo tempo
 // lista encadeada de pacientes
 
-/*
-//BUG se 2 clientes inserirem num arquivo ao mesmo tempo, ele sera corrompido
-solucao flock()
-*/
+
 struct Paciente
 {
     char nome[MAX_NOME];
@@ -144,7 +135,6 @@ void logs(int comando, char string1[MAX_NOME], char string2[MAX_NOME])
 }
 
 // funcao pra encapsular recebimento de mensagens
-// FIXME possivel overflow
 int receber(int socket, char *buffer, int tam)
 {
     // printf("tam %lu",strlen(buffer));
@@ -155,7 +145,6 @@ int receber(int socket, char *buffer, int tam)
         perror("receber");
         //  ele ficava recebendo eternamente de qualquer jeito
         // precisava dar um jeito de setar o resp para 0 daqui
-        //[ ] porque eu comentei?
          close(socket);
         printf("\nsocket %d será fechado à força", socket);
         return 1;
@@ -415,7 +404,6 @@ int main(int argc, char **argv)
     signal(SIGCHLD, sigchld_handler);
 
     struct Paciente *pacientes;
-    // TODO aumentar
     struct Usuario usuarios[10000];
 
     int quantUsuarios = lerUsuario(usuarios);
@@ -444,7 +432,6 @@ int main(int argc, char **argv)
             // Uma vez com o processo filho, fecha-se o processo listen
             // lembre-se que todos os filhos são copiados do processo pai
 
-            /// XXX comeca o meu codigo
 
             time_t inicio = time(NULL);
 
@@ -493,7 +480,6 @@ int main(int argc, char **argv)
                 if (receber(novo_socket, buffer, 2))
                 {
                     // se esse receber der erro ele sai do laço
-                    // TODO essa verificação é boa, mas talvez deveria colocar em mais lugares
                     logs(0, nom, NULL);
                     break;
                 }
@@ -550,7 +536,6 @@ int main(int argc, char **argv)
                     verFila(pacientes, string1);
 
                     // pega a fila do arquivo, que esta sempre atualizada
-                    //[ ] testar isso tbm
                     destroiPaciente(&pacientes);
                     lerPaciente(&pacientes);
                     char string2[MAX_STRING];
@@ -613,4 +598,3 @@ int main(int argc, char **argv)
 
     return 0;
 }
-//[x] sessao em um arquivo so ou em vários?

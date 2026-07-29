@@ -15,9 +15,6 @@
 #define MAX_STRING 500
 #define true 1
 
-// XXX cuidado para colcar o mesmo tamanho ao enviar e receber
-
-void funcao_filhos(int num_filhos);
 
 // funcao pra encapsular recebimento de mensagens
 void receber(int socket, char *buffer, int tam)
@@ -39,32 +36,6 @@ void receber(int socket, char *buffer, int tam)
 }
 
 int main(int argc, char **argv)
-{
-    int nfilhos = 1;
-    int pid, x;
-    //[ ] quanto disso realmente precisa?
-    if (argc > 1)
-    {
-        nfilhos = atoi(argv[1]);
-    }
-    for (x = 0; x < nfilhos; x++)
-    {
-        if ((pid = fork()) == 0)
-        {
-
-            funcao_filhos(x + 1);
-            exit(0);
-        }
-    }
-
-    // depois de criar os filhos, o processo pai espera por eles
-    wait(NULL);
-
-    return 0;
-}
-
-//[ ] devia existir?
-void funcao_filhos(int num_filhos)
 {
     int sock;
     struct sockaddr_in sAddr;
@@ -92,7 +63,7 @@ void funcao_filhos(int num_filhos)
     {
 
         perror("\nCliente");
-        return;
+        return 0;
     }
 
     // deu tudo certo
@@ -107,7 +78,6 @@ void funcao_filhos(int num_filhos)
     char nome[MAX_NOME], senha[MAX_NOME];
 
     // autenticacao
-    //[x] o cliente precisa de autenticacao, ou é só o servidor?
     char aut[25];
     // do
     // {
@@ -162,14 +132,12 @@ void funcao_filhos(int num_filhos)
             char id[MAX_NUMERO];
             char nome[MAX_NOME];
             printf("\nID:");
-            // TODO nao tem verificacao pra ver se o novo id é um numero
             // se nao for ele coloca 0
             scanf("%s", id);
             printf("\nNome:");
             // scanf("%s", nome);
 
-            // le o \n para que o fgets nao seja pulado,
-            // TODO má pratica
+            // le o \n para que o fgets nao seja pulado
             int c;
             while ((c = getchar()) != '\n' && c != EOF)
                 ;
@@ -209,7 +177,6 @@ void funcao_filhos(int num_filhos)
             send(sock, resp, 2, 0);
 
             // esperar
-            // de alguma forma, o erro era eu tentanto reusar o status
             char alive[10];
             sleep(1);
             receber(sock, alive, 10);
@@ -235,6 +202,5 @@ void funcao_filhos(int num_filhos)
     // fflush(stdout);
 
     close(sock);
+    return 0;
 }
-
-//HACK o heartbeat envia o codigo 3 pro servidor, que manda quantos pacientes há em sua fila

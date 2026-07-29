@@ -451,8 +451,16 @@ int main(int argc, char **argv)
             // {
             receber(novo_socket, nom, MAX_NOME);
             receber(novo_socket, sen, MAX_NOME);
+            for (int i = 0; i < quantUsuarios; i++)
+            {
+                if ((strcmp(nom, usuarios[i].nome) == 0) && (strcmp(sen, usuarios[i].senha) == 0))
+                {
+                    encontrado = 1;
+                    break;
+                }
+            }
 
-            if ((strcmp(nom, "joao") != 0) || (strcmp(sen, "123") != 0))
+            if (encontrado == 0)
             {
                 strcpy(buffer, "nao encontrado");
                 send(novo_socket, buffer, 25, 0);
@@ -535,7 +543,6 @@ int main(int argc, char **argv)
                     verFila(pacientes, string1);
 
                     // pega a fila do arquivo, que esta sempre atualizada
-                    //[ ] testar isso tbm
                     destroiPaciente(&pacientes);
                     lerPaciente(&pacientes);
                     char string2[MAX_STRING];
@@ -600,4 +607,3 @@ int main(int argc, char **argv)
 
     return 0;
 }
-//[x] sessao em um arquivo so ou em vários?
