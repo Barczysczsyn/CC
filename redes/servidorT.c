@@ -15,6 +15,7 @@
 // zombies são processos filhos que aparecem quando processos pais deixam de existir sem ser feita a chamada wait ou waitpid dos filhos
 #include <sys/wait.h>
 #include <signal.h>
+#include <sys/select.h>
 
 #define true 1
 
@@ -28,6 +29,7 @@
 #define ARQV_HISTORICO "bd_historico"
 #define ARQV_SESSAO "bd_sessao"
 #define ARQV_LOGS "bd_logs"
+#define MAX_CLIENTES 100
 
 //[x] como diabos se cadastra usuario?
 //[x] como consulta o historico, logs e sessoes? isso é feito pelo servidor ou cliente?
@@ -35,6 +37,10 @@
 //[ ] o ver fila faz broadcast? isso é a retransmissão de mensagens?
 // TODO ele consegue receber 10000 clientes, so nao sei se é ao mesmo tempo
 // lista encadeada de pacientes
+
+int pipefd[2];
+int clientes[MAX_CLIENTES];
+int qtd_clientes = 0;
 
 /*
 //BUG se 2 clientes inserirem num arquivo ao mesmo tempo, ele sera corrompido
@@ -265,46 +271,6 @@ void lerPaciente(struct Paciente **inicio)
     }
     fclose(arqv);
 }
-/*
-// escreve todos os usuarios no arquivo binario
-void gravarUsuario(struct Usuario *usuarios, int quant)
-{
-    FILE *arqv = fopen(ARQV_USUARIOS, "w");
-    if (arqv == NULL)
-        return;
-
-    for (int i = 0; i < quant; i++)
-    {
-        // burro?
-        fwrite(usuarios[i].nome, MAX_NOME, 1, arqv);
-        fwrite(usuarios[i].senha, MAX_NOME, 1, arqv);
-    }
-
-    fclose(arqv);
-}
-
-// le o arquivo binario e coloca todos os usuarios no vetor
-int lerUsuario(struct Usuario *usuarios)
-{
-    int i = 0;
-    FILE *arqv = fopen(ARQV_USUARIOS, "r");
-    if (arqv == NULL)
-        return 0;
-
-    // abriu certo
-    while (fread(usuarios[i].nome, MAX_NOME, 1, arqv) == 1)
-    {
-        fread(usuarios[i].senha, MAX_NOME, 1, arqv);
-
-        printf("\nlido nome: %s senha %s", usuarios[i].nome, usuarios[i].senha);
-
-        i++;
-    }
-
-    fclose(arqv);
-    return i;
-}
-*/
 // insere um paciente no final da fila
 int inserirPaciente(int id, char nome[MAX_NOME], struct Paciente **inicio)
 {
@@ -375,6 +341,86 @@ void sigchld_handler(int signo)
     while (waitpid(-1, NULL, WNOHANG) > 0)
         ; // ozzydeia
 }
+
+void adicionarCliente(int socket)
+{
+    if (qtd_clientes < MAX_CLIENTES)
+    {
+        clientes[qtd_clientes++] = socket;
+    }
+}
+
+void removerCliente(int socket)
+{
+    for (int i = 0; i < qtd_clientes; ++i)
+    {
+        if (clientes[i] == socket)
+        {
+            for (int j = i; j < qtd_clientes - 1; ++j)
+            {
+                clientes[j] = clientes[j + 1];
+            }
+            --qtd_clientes;
+            break;
+        }
+    }
+}
+
+void enviarBroadcast(int origem, const char *mensagem)
+{
+    for (int i = 0; i < qtd_clientes; ++i)
+    {
+        if (clientes[i] != origem && clientes[i] >= 0)
+        {
+            if (send(clientes[i], mensagem, strlen(mensagem) + 1, 0) < 0)
+            {
+                perror("send broadcast");
+                removerCliente(clientes[i]);
+                close(clientes[i]);
+            }
+        }
+    }
+}
+
+void processarPipe(int fd)
+{
+    char msg[512];
+    while (1)
+    {
+        ssize_t n = read(fd, msg, sizeof(msg) - 1);
+        if (n <= 0)
+        {
+            break;
+        }
+
+        msg[n] = '\0';
+        char *acao = strtok(msg, "|");
+        if (acao == NULL)
+        {
+            continue;
+        }
+
+        if (strcmp(acao, "BROADCAST") == 0)
+        {
+            char *origem_s = strtok(NULL, "|");
+            char *corpo = strtok(NULL, "");
+            if (origem_s != NULL && corpo != NULL)
+            {
+                enviarBroadcast(atoi(origem_s), corpo);
+            }
+        }
+        else if (strcmp(acao, "LEAVE") == 0)
+        {
+            char *socket_s = strtok(NULL, "|");
+            if (socket_s != NULL)
+            {
+                int socket = atoi(socket_s);
+                removerCliente(socket);
+                close(socket);
+            }
+        }
+    }
+}
 // vale lembrar que o posix nao permite que a criação de filas nas chamadas
 // de sinal. Ou seja, pode acontecer de chamar o manipulador após vários
 // já terem sido desconectados
@@ -387,14 +433,22 @@ int main(int argc, char **argv)
     int resultado, leitor, pid, valor;
 
     meu_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (meu_socket < 0)
+    {
+        perror("socket");
+        return 0;
+    }
+
     valor = 1;
     // SO_REUSEADDR significa que as regras utilizadas para a validação de endereço feita pelo bind permite a reutilizacao de endereços locais.
     resultado = setsockopt(meu_socket, SOL_SOCKET, SO_REUSEADDR, &valor, sizeof(valor));
     if (resultado < 0)
     {
         perror("setsockopt");
+        close(meu_socket);
         return 0;
     }
+
     // uso do bind para associar a porta com todos os endereços
     servidor.sin_family = AF_INET;
     servidor.sin_port = htons(1972);
@@ -405,6 +459,7 @@ int main(int argc, char **argv)
     if (resultado < 0)
     {
         perror("bind");
+        close(meu_socket);
         return 0;
     }
 
@@ -418,6 +473,12 @@ int main(int argc, char **argv)
 
     // ativando o manipulador de sinais antes de entrar no laço
     signal(SIGCHLD, sigchld_handler);
+
+    if (pipe(pipefd) < 0)
+    {
+        perror("pipe");
+        return 0;
+    }
 
     struct Paciente *pacientes;
 
@@ -437,8 +498,27 @@ int main(int argc, char **argv)
     fflush(stdout);
     while (true)
     {
+        fd_set readfds;
+        FD_ZERO(&readfds);
+        FD_SET(meu_socket, &readfds);
+        FD_SET(pipefd[0], &readfds);
+
+        int maxfd = (meu_socket > pipefd[0]) ? meu_socket : pipefd[0];
+        select(maxfd + 1, &readfds, NULL, NULL, NULL);
+
+        if (FD_ISSET(pipefd[0], &readfds))
+        {
+            processarPipe(pipefd[0]);
+        }
+
+        if (!FD_ISSET(meu_socket, &readfds))
+        {
+            continue;
+        }
+
         // antes da chamada ser aceita ou retornada, chama-se o fork para a criação de novos processos
         novo_socket = accept(meu_socket, NULL, NULL);
+        adicionarCliente(novo_socket);
         if ((pid = fork()) == 0)
         {
             // se retorna 0 e porque estamos no processo inicial
@@ -473,6 +553,9 @@ int main(int argc, char **argv)
                 send(novo_socket, buffer, 25, 0);
                 // finalizar a sessao
 
+                char msg_saida[32];
+                snprintf(msg_saida, sizeof(msg_saida), "LEAVE|%d", novo_socket);
+                write(pipefd[1], msg_saida, strlen(msg_saida) + 1);
                 close(novo_socket);
                 exit(0);
             }
@@ -521,6 +604,10 @@ int main(int argc, char **argv)
                         printf("\npaciente %s inserido com sucesso", novoNome);
                         strcpy(status, "sucesso");
                         send(novo_socket, status, 25, 0);
+
+                        char mensagem[MAX_STRING];
+                        snprintf(mensagem, sizeof(mensagem), "BROADCAST|%d|NOVO_PACIENTE:%s:%d", novo_socket, novoNome, atoi(novoID));
+                        write(pipefd[1], mensagem, strlen(mensagem) + 1);
                     }
                     else
                     {
@@ -602,6 +689,9 @@ int main(int argc, char **argv)
             sessao(nom, (fim - inicio));
             // acaba o filho
 
+            char msg_saida[32];
+            snprintf(msg_saida, sizeof(msg_saida), "LEAVE|%d", novo_socket);
+            write(pipefd[1], msg_saida, strlen(msg_saida) + 1);
             close(novo_socket);
             // essa ultima linha só é alcançada no processo pai, uma vez que o processo filho tem uma cópia do socket cliente, o processo pai
             // faz a sua referência e decrementa o contador no kernel
@@ -610,7 +700,6 @@ int main(int argc, char **argv)
             exit(0);
             // fclose(sess);
         }
-        close(novo_socket);
     }
 
     return 0;

@@ -1,3 +1,3 @@
 hellomake: servidorT.c clienteT.c
-	gcc servidorT.c -o servidor
-	gcc clienteT.c -o cliente
+	gcc -pthread servidorT.c -o servidor
+	gcc -pthread clienteT.c -o cliente
