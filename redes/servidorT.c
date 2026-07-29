@@ -31,12 +31,12 @@
 
 // lista encadeada de pacientes
 
-
 struct Paciente
 {
     char nome[MAX_NOME];
     int id;
     struct Paciente *prox;
+    int dono;
 };
 struct Usuario
 {
@@ -145,7 +145,7 @@ int receber(int socket, char *buffer, int tam)
         perror("receber");
         //  ele ficava recebendo eternamente de qualquer jeito
         // precisava dar um jeito de setar o resp para 0 daqui
-         close(socket);
+        close(socket);
         printf("\nsocket %d será fechado à força", socket);
         return 1;
     }
@@ -170,6 +170,7 @@ void gravarPacientes(struct Paciente **inicio)
     {
         fwrite(p1->nome, sizeof(p1->nome), 1, arqv);
         fwrite(&(p1->id), sizeof(p1->id), 1, arqv);
+        fwrite(&(p1->id), sizeof(p1->dono), 1, arqv);
         // nao vou fazer assim porque ele escreveria o ponteiro tambem, que é inutil nessa ocasiao
         // fwrite(p1,sizeof(struct Paciente),1,arqv);
         p1 = p1->prox;
@@ -195,10 +196,11 @@ void gravarPaciente(struct Paciente **inicio)
     // é o ultimo da fila
     fwrite(p1->nome, MAX_NOME, 1, arqv);
     fwrite(&(p1->id), sizeof(p1->id), 1, arqv);
+    fwrite(&(p1->dono), sizeof(p1->dono), 1, arqv);
 
     fclose(arqv);
 }
-//limpa a fila e libera a memória
+// limpa a fila e libera a memória
 void destroiPaciente(struct Paciente **inicio)
 {
     if (inicio == NULL || *inicio == NULL)
@@ -219,7 +221,7 @@ void destroiPaciente(struct Paciente **inicio)
     *inicio = NULL;
 }
 
-//le o arquivo e coloca os pacientes na lista encadeada
+// le o arquivo e coloca os pacientes na lista encadeada
 void lerPaciente(struct Paciente **inicio)
 {
     FILE *arqv = fopen(ARQV_PACIENTE, "r");
@@ -233,14 +235,16 @@ void lerPaciente(struct Paciente **inicio)
 
     struct Paciente *p1 = *inicio;
     char nome[MAX_NOME];
-    int id;
+    int id, dono;
     while (fread(nome, MAX_NOME, 1, arqv) == 1)
     {
         fread(&id, sizeof(int), 1, arqv);
+        fread(&dono, sizeof(int), 1, arqv);
 
         struct Paciente *novo = malloc(sizeof(struct Paciente));
         strcpy(novo->nome, nome);
         novo->id = id;
+        novo->dono = dono;
         // printf("\nlido nome: %s id %d", novo->nome, novo->id);
         // fflush(stdout);
         // sleep(1);
@@ -250,7 +254,7 @@ void lerPaciente(struct Paciente **inicio)
     }
     fclose(arqv);
 }
-//escreve todos os usuarios no arquivo binario
+// escreve todos os usuarios no arquivo binario
 void gravarUsuario(struct Usuario *usuarios, int quant)
 {
     FILE *arqv = fopen(ARQV_USUARIOS, "w");
@@ -267,7 +271,7 @@ void gravarUsuario(struct Usuario *usuarios, int quant)
     fclose(arqv);
 }
 
-//le o arquivo binario e coloca todos os usuarios no vetor
+// le o arquivo binario e coloca todos os usuarios no vetor
 int lerUsuario(struct Usuario *usuarios)
 {
     int i = 0;
@@ -289,8 +293,8 @@ int lerUsuario(struct Usuario *usuarios)
     return i;
 }
 
-//insere um paciente no final da fila
-int inserirPaciente(int id, char nome[MAX_NOME], struct Paciente **inicio)
+// insere um paciente no final da fila
+int inserirPaciente(int id, char nome[MAX_NOME], struct Paciente **inicio, int dono)
 {
     // retorna 1 se funcionou
     struct Paciente *novo = malloc(sizeof(struct Paciente));
@@ -300,6 +304,7 @@ int inserirPaciente(int id, char nome[MAX_NOME], struct Paciente **inicio)
 
     strcpy(novo->nome, nome);
     novo->id = id;
+    novo->dono = dono;
     novo->prox = NULL;
 
     // se é a primeira insercao
@@ -321,7 +326,7 @@ int inserirPaciente(int id, char nome[MAX_NOME], struct Paciente **inicio)
     return 1;
 }
 
-//coloca a fila toda numa string
+// coloca a fila toda numa string
 int verFila(struct Paciente *inicio, char string[MAX_STRING])
 {
     if (inicio == NULL)
@@ -338,12 +343,9 @@ int verFila(struct Paciente *inicio, char string[MAX_STRING])
         while (p1 != NULL)
         {
             // strcat(string, "\n%d - %s", p1->id, p1->nome);
-            char id[MAX_NUMERO];
-            snprintf(id, MAX_NUMERO, "%d", p1->id);
-            strcat(string, "\n");
-            strcat(string, id);
-            strcat(string, " - ");
-            strcat(string, p1->nome);
+            char temp[60];
+            snprintf(temp, sizeof(temp), "\n%d - %s", p1->id, p1->nome);
+            strcat(string, temp);
             p1 = p1->prox;
             ++cont;
         }
@@ -351,6 +353,47 @@ int verFila(struct Paciente *inicio, char string[MAX_STRING])
         return cont;
     }
 }
+
+// coloca a fila toda numa string
+int heartbeat(struct Paciente *inicio, char string[MAX_STRING], int dono, int visto)
+{
+    if (inicio == NULL)
+    {
+        strcpy(string, "ALIVE");
+    }
+    else
+    {
+        int cont = 0;
+        strcpy(string, "\n=Novos pacientes=");
+
+        struct Paciente *p1 = inicio;
+        // pula os que ja foram vistos
+        for (int i = 0; i < visto; i++)
+        {
+            p1 = p1->prox;
+        }
+        if (p1 == NULL)
+        {
+            strcpy(string, "ALIVE");
+        }
+
+        while (p1 != NULL)
+        {
+            if (p1->dono != dono)
+            {
+                // strcat(string, "\n%d - %s", p1->id, p1->nome);
+                char temp[66];
+                snprintf(temp, sizeof(temp), "\n%d - %s", p1->id, p1->nome);
+                strcat(string, temp);
+                ++visto;
+            }
+            p1 = p1->prox;
+        }
+        strcat(string, "\n================");
+    }
+    return visto;
+}
+
 // manipulador de sinais. Ele simplesmente faz a chamada waitpid para todo filho que for desconectado
 void sigchld_handler(int signo)
 {
@@ -432,7 +475,6 @@ int main(int argc, char **argv)
             // Uma vez com o processo filho, fecha-se o processo listen
             // lembre-se que todos os filhos são copiados do processo pai
 
-
             time_t inicio = time(NULL);
 
             // recebe e envia a confirmacao de conexao
@@ -441,7 +483,7 @@ int main(int argc, char **argv)
 
             // autenticacao
             char nom[MAX_NOME], sen[MAX_NOME];
-            int encontrado = 0;
+            int encontrado = 0, visto = 0;
             // do
             // {
             receber(novo_socket, nom, MAX_NOME);
@@ -501,7 +543,7 @@ int main(int argc, char **argv)
                     receber(novo_socket, novoNome, MAX_NOME);
                     receber(novo_socket, novoID, MAX_NUMERO);
                     char status[10];
-                    if (inserirPaciente(atoi(novoID), novoNome, &pacientes))
+                    if (inserirPaciente(atoi(novoID), novoNome, &pacientes, getpid()))
                     {
                         printf("\npaciente %s inserido com sucesso", novoNome);
                         strcpy(status, "sucesso");
@@ -523,6 +565,8 @@ int main(int argc, char **argv)
                     break;
                 case 2:
                     char string[MAX_STRING];
+                    destroiPaciente(&pacientes);
+                    lerPaciente(&pacientes);
                     verFila(pacientes, string);
 
                     send(novo_socket, string, MAX_STRING, 0);
@@ -531,41 +575,8 @@ int main(int argc, char **argv)
                     break;
 
                 case 3:
-                    // pega a fila atual
-                    char string1[MAX_STRING];
-                    verFila(pacientes, string1);
-
-                    // pega a fila do arquivo, que esta sempre atualizada
-                    destroiPaciente(&pacientes);
-                    lerPaciente(&pacientes);
-                    char string2[MAX_STRING];
-                    int tam = verFila(pacientes, string2);
-
-                    // aparentemente ele tem acesso à variavel do case 1
-                    // char status[10];
-                    if (strcmp(string1, string2) == 0)
-                    {
-                        strcpy(status, "ALIVE");
-                        send(novo_socket, status, 10, 0);
-                    }
-                    else
-                    {
-                        // qual o contrario de alive?
-                        strcpy(status, "DEAD");
-                        send(novo_socket, status, 10, 0);
-                        /*
-                        sprintf(status, "%d", tam);
-                        send(novo_socket, status, 10, 0);
-
-                        for (int i = 0; i < tam; i++)
-                        {
-                            send(novo_socket, status, 10, 0);
-                        }
-                            */
-                        // nem precisa disso, o lado do cliente nunca vai ter nada, so precisa atualizar no socket dele
-
-                        send(novo_socket, string2, MAX_STRING, 0);
-                    }
+                    visto = heartbeat(pacientes, string, getpid(), visto);
+                    send(novo_socket, string, MAX_STRING, 0);
 
                     historico(3, nom, NULL);
                     break;
