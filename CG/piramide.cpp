@@ -46,8 +46,11 @@ static int pointCount = 0;       // Number of  specified points.
 static int tempX, tempY;         // Co-ordinates of clicked point.
 static int isGrid = 1;           // Is there grid?
 
-//mais coordenadas temporarias pra piramide
-static int tX2,tY2;
+// mais coordenadas temporarias pra piramide
+static int tX2, tY2;
+
+// coordenada do ponto inicial
+static int xini, yini;
 
 // Point class.
 class Point
@@ -184,7 +187,7 @@ void drawRectangles(void)
 // Rectangle class.
 class Piramide
 {
-    //por enquanto, só piramides de base quadrada
+    // por enquanto, só piramides de base quadrada
 public:
     Piramide(int x1Val, int y1Val, int x2Val, int y2Val, int altura)
     {
@@ -197,18 +200,22 @@ public:
     void drawPiramide();
 
 private:
-    int x1, y1, x2, y2,h; // x and y co-ordinates of diagonally opposite vertices.
+    int x1, y1, x2, y2, h; // x and y co-ordinates of diagonally opposite vertices.
 };
 
 // Function to draw a rectangle.
 void Piramide::drawPiramide()
 {
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glRectf(x1, y1, x2, y2);
-    int xmedio = (x1 + x2 )/2;
-    int ymedio = (y1 + y2 )/2;
+    glBegin(GL_LINE_LOOP);
+    glVertex3f(x1, y1, 0.0f);
+    glVertex3f(x2, y1, 0.0f);
+    glVertex3f(x2, y2, 0.0f);
+    glVertex3f(x1, y2, 0.0f);
+    glEnd();
+    int xmedio = (x1 + x2) / 2;
+    int ymedio = (y1 + y2) / 2;
 
-    //puxa uma linha de cada extremidade do retangulo para a ponta da piramide
+    // puxa uma linha de cada extremidade do retangulo para a ponta da piramide
     glBegin(GL_LINES);
     glVertex3f(x1, y1, 0.0);
     glVertex3f(xmedio, ymedio, h);
@@ -229,6 +236,12 @@ vector<Piramide> piramides;
 
 // Iterator to traverse a Rectangle array.
 vector<Piramide>::iterator piramidesIterator;
+
+
+//armazena os pontos temporarios criados antes da piramide ser completa
+vector<Point> pontoPiramide;
+
+vector<Point>::iterator pontoPiramideIterator;
 
 // Function to draw all rectangles in the rectangles array.
 void drawPiramides(void)
@@ -374,7 +387,7 @@ void drawTempPoint(void)
     glPointSize(pointSize);
     glBegin(GL_POINTS);
     glVertex3f(tempX, tempY, 0.0);
-    //pra piramide
+    // pra piramide
     glVertex3f(tX2, tY2, 0.0);
     glEnd();
 }
@@ -424,7 +437,7 @@ void drawScene(void)
         (pointCount == 1))
         drawTempPoint();
 
-        //tambem desenha nas piramides
+    // tambem desenha nas piramides
     if ((primitive == PIRAMIDE) && (pointCount < 3))
         drawTempPoint();
     if (isGrid)
@@ -437,8 +450,10 @@ void drawScene(void)
 //  Function to pick primitive if click is in left selection area.
 void pickPrimitive(int y)
 {
-    printf("%d",primitive);
+    printf("%d", primitive);
     if (y < (1 - NUMBERPRIMITIVES * 0.1) * height)
+        primitive = INACTIVE;
+    else if (y < (1 - 3 * 0.1) * height)
         primitive = PIRAMIDE;
     else if (y < (1 - 2 * 0.1) * height)
         primitive = RECTANGLE;
@@ -499,25 +514,35 @@ void mouseControl(int button, int state, int x, int y)
                     pointCount = 0;
                 }
             }
-            else if(primitive == PIRAMIDE){
+            else if (primitive == PIRAMIDE)
+            {
 
                 if (pointCount == 0)
                 {
-                    tempX = x;
-                    tempY = y;
+                    xini = x;
+                    yini = y;
                     pointCount++;
                 }
-                if (pointCount == 1)
+                if (pointCount > 0)
                 {
-                    tX2 = x;
-                    tY2 = y;
-                    pointCount++;
-                }
-                if (pointCount == 2)
-                {
-                    //[ ] altura 5 por enquanto pq eu nao sei como vai ser inserida
-                    piramides.push_back(Piramide(tempX, tempY, x, y,5));
-                    pointCount = 0;
+
+                    if ((x < (xini + 0.1)) && (x > (xini - 0.1)) && (y < (yini + 0.1)) && (y < (yini + 0.1)))
+                    {
+                        // se finaliza a piramide
+                        //[ ] altura 5 por enquanto pq eu nao sei como vai ser inserida
+                        piramides.push_back(Piramide(tempX, tempY, x, y, 1));
+                        pointCount = 0;
+                        xini = 0;
+                        yini = 0;
+                    }
+                    else
+                    {
+                        //TODO testar
+                        pontoPiramide.push_back(Point(x,y));
+                        tX2 = x;
+                        tY2 = y;
+                        pointCount++;
+                    }
                 }
             }
         }
@@ -584,7 +609,7 @@ void rightMenu(int id)
         exit(0);
     if (id == 3)
         system("xdg-open https://www.youtube.com/shorts/ObPCjyqfVjo");
-        //TODO tirar isso no final
+    // TODO tirar isso no final
 }
 
 // The sub-menu callback function.
@@ -609,7 +634,7 @@ void makeMenu(void)
     glutAddSubMenu("Grid", sub_menu);
     glutAddMenuEntry("Clear", 1);
     glutAddMenuEntry("Quit", 2);
-        //TODO tirar isso no final
+    // TODO tirar isso no final
     glutAddMenuEntry("Tomar no cu", 3);
     glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
