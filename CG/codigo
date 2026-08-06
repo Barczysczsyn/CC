@@ -1,0 +1,2 @@
+g++ -o square square.cpp -lglut -lGL -lGLU -lm
+

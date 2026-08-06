@@ -1,0 +1,39 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+ <head>
+  <title>Index of /~mercedes/disciplinas/2025/CG/SUMANTA GUHA/ExperimenterSource/Chapter10/TorusSweep</title>
+  <link rel="stylesheet" href="/~.themes/apaxy/theme/style.css" type="text/css" />
+        <link rel="shortcut icon" href="/~.themes/apaxy/theme/favicon.ico" />        <meta name="viewport" content="width=device-width, initial-scale=1" /> </head>
+ <body>
+<div class="wrapper">
+<!-- we open the `wrapper` element here, but close it in the `footer.html` file -->
+
+<ol class="breadcrumb" id="breadcrumb">
+</ol>
+
+<input type="search" id="filter" placeholder="filter contents" />
+
+<!--{HEADER-MESSAGE}-->
+  <table id="indexlist">
+   <tr class="indexhead"><th class="indexcolicon"><img src="/~.themes/apaxy/theme/icons/blank.png" alt="[ICO]" /></th><th class="indexcolname"><a href="?C=N;O=A">Name</a></th><th class="indexcollastmod"><a href="?C=M;O=A">Last modified</a></th><th class="indexcolsize"><a href="?C=S;O=A">Size</a></th></tr>
+   <tr class="even"><td class="indexcolicon"><a href="/~mercedes/disciplinas/2025/CG/SUMANTA%20GUHA/ExperimenterSource/Chapter10/"><img src="/~.themes/apaxy/theme/icons/folder-home.png" alt="[PARENTDIR]" /></a></td><td class="indexcolname"><a href="/~mercedes/disciplinas/2025/CG/SUMANTA%20GUHA/ExperimenterSource/Chapter10/">Parent Directory</a></td><td class="indexcollastmod">&nbsp;</td><td class="indexcolsize">  - </td></tr>
+   <tr class="odd"><td class="indexcolicon"><a href="TorusSweep.suo"><img src="/~.themes/apaxy/theme/icons/default.png" alt="[   ]" /></a></td><td class="indexcolname"><a href="TorusSweep.suo">TorusSweep.suo</a></td><td class="indexcollastmod">2010-08-22 02:04  </td><td class="indexcolsize"> 11K</td></tr>
+   <tr class="even"><td class="indexcolicon"><a href="torusSweep.cpp"><img src="/~.themes/apaxy/theme/icons/cpp.png" alt="[c]" /></a></td><td class="indexcolname"><a href="torusSweep.cpp">torusSweep.cpp</a></td><td class="indexcollastmod">2010-08-22 02:03  </td><td class="indexcolsize">5.3K</td></tr>
+   <tr class="odd"><td class="indexcolicon"><a href="TorusSweep.vcxproj"><img src="/~.themes/apaxy/theme/icons/default.png" alt="[   ]" /></a></td><td class="indexcolname"><a href="TorusSweep.vcxproj">TorusSweep.vcxproj</a></td><td class="indexcollastmod">2010-08-22 02:03  </td><td class="indexcolsize">3.8K</td></tr>
+   <tr class="even"><td class="indexcolicon"><a href="TorusSweep.vcxproj.filters"><img src="/~.themes/apaxy/theme/icons/default.png" alt="[   ]" /></a></td><td class="indexcolname"><a href="TorusSweep.vcxproj.filters">TorusSweep.vcxproj.filters</a></td><td class="indexcollastmod">2010-08-22 02:03  </td><td class="indexcolsize">959 </td></tr>
+   <tr class="odd"><td class="indexcolicon"><a href="TorusSweep.sln"><img src="/~.themes/apaxy/theme/icons/default.png" alt="[   ]" /></a></td><td class="indexcolname"><a href="TorusSweep.sln">TorusSweep.sln</a></td><td class="indexcollastmod">2010-08-22 02:02  </td><td class="indexcolsize">891 </td></tr>
+   <tr class="even"><td class="indexcolicon"><a href="TorusSweep.vcxproj.user"><img src="/~.themes/apaxy/theme/icons/default.png" alt="[   ]" /></a></td><td class="indexcolname"><a href="TorusSweep.vcxproj.user">TorusSweep.vcxproj.user</a></td><td class="indexcollastmod">2010-08-22 02:02  </td><td class="indexcolsize">143 </td></tr>
+</table>
+  <div class="block">
+    <!--{FOOTER-MESSAGE}-->
+  </div><!--/.postlisting-->
+
+</div><!--/.wrapper-->
+
+<div class="footer">
+  Apaxy by <a href="https://twitter.com/adamwhitcroft">@adamwhitcroft</a>
+</div><!--/.footer-->
+<script src=/~.themes/apaxy/theme/apaxy.js></script>
+
+</body></html>

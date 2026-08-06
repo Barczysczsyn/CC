@@ -1,0 +1,39 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+ <head>
+  <title>Index of /~mercedes/disciplinas/2025/CG/SUMANTA GUHA/ExperimenterSource/Chapter2/ExperimentHelixPerspective</title>
+  <link rel="stylesheet" href="/~.themes/apaxy/theme/style.css" type="text/css" />
+        <link rel="shortcut icon" href="/~.themes/apaxy/theme/favicon.ico" />        <meta name="viewport" content="width=device-width, initial-scale=1" /> </head>
+ <body>
+<div class="wrapper">
+<!-- we open the `wrapper` element here, but close it in the `footer.html` file -->
+
+<ol class="breadcrumb" id="breadcrumb">
+</ol>
+
+<input type="search" id="filter" placeholder="filter contents" />
+
+<!--{HEADER-MESSAGE}-->
+  <table id="indexlist">
+   <tr class="indexhead"><th class="indexcolicon"><img src="/~.themes/apaxy/theme/icons/blank.png" alt="[ICO]" /></th><th class="indexcolname"><a href="?C=N;O=A">Name</a></th><th class="indexcollastmod"><a href="?C=M;O=D">Last modified</a></th><th class="indexcolsize"><a href="?C=S;O=A">Size</a></th></tr>
+   <tr class="even"><td class="indexcolicon"><a href="/~mercedes/disciplinas/2025/CG/SUMANTA%20GUHA/ExperimenterSource/Chapter2/"><img src="/~.themes/apaxy/theme/icons/folder-home.png" alt="[PARENTDIR]" /></a></td><td class="indexcolname"><a href="/~mercedes/disciplinas/2025/CG/SUMANTA%20GUHA/ExperimenterSource/Chapter2/">Parent Directory</a></td><td class="indexcollastmod">&nbsp;</td><td class="indexcolsize">  - </td></tr>
+   <tr class="odd"><td class="indexcolicon"><a href="ExperimentHelixPerspective.vcxproj.user"><img src="/~.themes/apaxy/theme/icons/default.png" alt="[   ]" /></a></td><td class="indexcolname"><a href="ExperimentHelixPerspective.vcxproj.user">ExperimentHelixPerspective.vcxproj.user</a></td><td class="indexcollastmod">2010-08-15 19:52  </td><td class="indexcolsize">143 </td></tr>
+   <tr class="even"><td class="indexcolicon"><a href="ExperimentHelixPerspective.sln"><img src="/~.themes/apaxy/theme/icons/default.png" alt="[   ]" /></a></td><td class="indexcolname"><a href="ExperimentHelixPerspective.sln">ExperimentHelixPerspective.sln</a></td><td class="indexcollastmod">2010-08-15 19:52  </td><td class="indexcolsize">923 </td></tr>
+   <tr class="odd"><td class="indexcolicon"><a href="experimentHelixPerspective.cpp"><img src="/~.themes/apaxy/theme/icons/cpp.png" alt="[c]" /></a></td><td class="indexcolname"><a href="experimentHelixPerspective.cpp">experimentHelixPerspective.cpp</a></td><td class="indexcollastmod">2010-08-15 19:53  </td><td class="indexcolsize">1.8K</td></tr>
+   <tr class="even"><td class="indexcolicon"><a href="ExperimentHelixPerspective.vcxproj"><img src="/~.themes/apaxy/theme/icons/default.png" alt="[   ]" /></a></td><td class="indexcolname"><a href="ExperimentHelixPerspective.vcxproj">ExperimentHelixPerspective.vcxproj</a></td><td class="indexcollastmod">2010-08-15 19:53  </td><td class="indexcolsize">3.9K</td></tr>
+   <tr class="odd"><td class="indexcolicon"><a href="ExperimentHelixPerspective.vcxproj.filters"><img src="/~.themes/apaxy/theme/icons/default.png" alt="[   ]" /></a></td><td class="indexcolname"><a href="ExperimentHelixPerspective.vcxproj.filters">ExperimentHelixPerspective.vcxproj.filters</a></td><td class="indexcollastmod">2010-08-15 19:53  </td><td class="indexcolsize">1.0K</td></tr>
+   <tr class="even"><td class="indexcolicon"><a href="ExperimentHelixPerspective.suo"><img src="/~.themes/apaxy/theme/icons/default.png" alt="[   ]" /></a></td><td class="indexcolname"><a href="ExperimentHelixPerspective.suo">ExperimentHelixPerspective.suo</a></td><td class="indexcollastmod">2010-08-30 13:57  </td><td class="indexcolsize"> 10K</td></tr>
+</table>
+  <div class="block">
+    <!--{FOOTER-MESSAGE}-->
+  </div><!--/.postlisting-->
+
+</div><!--/.wrapper-->
+
+<div class="footer">
+  Apaxy by <a href="https://twitter.com/adamwhitcroft">@adamwhitcroft</a>
+</div><!--/.footer-->
+<script src=/~.themes/apaxy/theme/apaxy.js></script>
+
+</body></html>

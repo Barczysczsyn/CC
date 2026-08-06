@@ -9,7 +9,6 @@
 #include <arpa/inet.h>
 
 #define MAX_NOME 50
-#define MAX_SENHA 20
 #define MAX_BUF 25
 #define MAX_NUMERO 10
 #define MAX_STRING 500
