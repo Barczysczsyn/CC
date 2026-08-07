@@ -18,6 +18,7 @@
 #include <cstdlib>
 #include <vector>
 #include <iostream>
+#include <cmath>
 
 #ifdef __APPLE__
 #include <GLUT/glut.h>
@@ -46,11 +47,13 @@ static int pointCount = 0;       // Number of  specified points.
 static int tempX, tempY;         // Co-ordinates of clicked point.
 static int isGrid = 1;           // Is there grid?
 
-// mais coordenadas temporarias pra piramide
-static int tX2, tY2;
 
-// coordenada do ponto inicial
+// coordenada do ponto inicial da piramide
 static int xini, yini;
+
+// rotacionar cena
+
+static float Xangle = 0.0, Yangle = 0.0, Zangle = 0.0; // Angles to rotate scene.
 
 // Point class.
 class Point
@@ -62,6 +65,17 @@ public:
         y = yVal;
     }
     void drawPoint(void); // Function to draw a point.
+    // tive que adicionar gets tbm
+
+    int getX()
+    {
+        return x;
+    }
+    int getY()
+    {
+        return y;
+    }
+
 private:
     int x, y;          // x and y co-ordinates of point.
     static float size; // Size of point.
@@ -184,50 +198,58 @@ void drawRectangles(void)
 
 // XXX PIRAMIDE
 
-// Rectangle class.
 class Piramide
 {
-    // por enquanto, só piramides de base quadrada
 public:
-    Piramide(int x1Val, int y1Val, int x2Val, int y2Val, int altura)
+    Piramide(vector<Point> pts, int altura, int xt, int yt)
     {
-        x1 = x1Val;
-        y1 = y1Val;
-        x2 = x2Val;
-        y2 = y2Val;
+        pontos = pts;
         h = altura;
+        xtopo = xt;
+        ytopo = yt;
     }
     void drawPiramide();
 
 private:
-    int x1, y1, x2, y2, h; // x and y co-ordinates of diagonally opposite vertices.
+    int xtopo, ytopo, h; // x and y co-ordinates of diagonally opposite vertices.
+    vector<Point> pontos;
 };
 
-// Function to draw a rectangle.
 void Piramide::drawPiramide()
 {
+
+    vector<Point>::iterator pontosI;
     glBegin(GL_LINE_LOOP);
-    glVertex3f(x1, y1, 0.0f);
-    glVertex3f(x2, y1, 0.0f);
-    glVertex3f(x2, y2, 0.0f);
-    glVertex3f(x1, y2, 0.0f);
+
+    pontosI = pontos.begin();
+    // pra calcular o meio
+    int xtotal = 0, ytotal = 0, quant = 0;
+    while (pontosI != pontos.end())
+    {
+        // piramidesIterator->drawPiramide();
+        glVertex3f(pontosI->getX(), pontosI->getY(), 0.0f);
+        pontosI++;
+        quant++;
+        xtotal += pontosI->getX();
+        ytotal += pontosI->getY();
+        // printf("xmedio %d ymedio %d quant %d",xtotal,ytotal,quant);
+        // fflush(stdout);
+    }
     glEnd();
-    int xmedio = (x1 + x2) / 2;
-    int ymedio = (y1 + y2) / 2;
+
+    int xmedio = (xtotal / quant);
+    int ymedio = (ytotal / quant);
+    glBegin(GL_LINES);
 
     // puxa uma linha de cada extremidade do retangulo para a ponta da piramide
-    glBegin(GL_LINES);
-    glVertex3f(x1, y1, 0.0);
-    glVertex3f(xmedio, ymedio, h);
-
-    glVertex3f(x2, y2, 0.0);
-    glVertex3f(xmedio, ymedio, h);
-
-    glVertex3f(x1, y2, 0.0);
-    glVertex3f(xmedio, ymedio, h);
-
-    glVertex3f(x2, y1, 0.0);
-    glVertex3f(xmedio, ymedio, h);
+    pontosI = pontos.begin();
+    while (pontosI != pontos.end())
+    {
+        // piramidesIterator->drawPiramide();
+        glVertex3f(pontosI->getX(), pontosI->getY(), 0.0f);
+        glVertex3f(xmedio, ymedio, h);
+        pontosI++;
+    }
     glEnd();
 }
 
@@ -237,11 +259,10 @@ vector<Piramide> piramides;
 // Iterator to traverse a Rectangle array.
 vector<Piramide>::iterator piramidesIterator;
 
+// armazena os pontos temporarios criados antes da piramide ser completa
+vector<Point> pontoPiramideTemp;
 
-//armazena os pontos temporarios criados antes da piramide ser completa
-vector<Point> pontoPiramide;
-
-vector<Point>::iterator pontoPiramideIterator;
+// vector<Point>::iterator pontoPiramideIterator;
 
 // Function to draw all rectangles in the rectangles array.
 void drawPiramides(void)
@@ -383,13 +404,36 @@ void drawInactiveArea(void)
 // Function to draw temporary point.
 void drawTempPoint(void)
 {
-    glColor3f(1.0, 0.0, 0.0);
+    //desenha o inicial da piramide
+
+    glColor3f(1.0, 1.0, 0.0);
+    glPointSize(5);
+    glBegin(GL_POINTS);
+    glVertex3f(xini, yini, 0.0);
+    glEnd();
+
+
+    glColor3f(0.0, 1.0, 0.0);
     glPointSize(pointSize);
     glBegin(GL_POINTS);
     glVertex3f(tempX, tempY, 0.0);
-    // pra piramide
-    glVertex3f(tX2, tY2, 0.0);
     glEnd();
+    // pra piramide
+    // glVertex3f(tX2, tY2, 0.0);
+
+
+    // desenha os pontos temporarios
+
+    vector<Point>::iterator pontosI;
+    pontosI = pontoPiramideTemp.begin();
+    while (pontosI != pontoPiramideTemp.end())
+    {
+        // piramidesIterator->drawPiramide();
+        // glVertex3f(pontosI->getX(), pontosI->getY(), 0.0f);
+        pontosI->drawPoint();
+        pontosI++;
+    }
+    // desenhar o ponto inicial
 }
 
 // Function to draw a grid.
@@ -428,6 +472,13 @@ void drawScene(void)
     drawCircleSelectionBox();
     drawPiramideSelectionBox();
     drawInactiveArea();
+
+    // rotacionar cena
+
+    // Rotate scene.
+    glRotatef(Zangle, 0.0, 0.0, 1.0);
+    glRotatef(Yangle, 0.0, 1.0, 0.0);
+    glRotatef(Xangle, 1.0, 0.0, 0.0);
 
     drawPoints();
     drawLines();
@@ -516,31 +567,39 @@ void mouseControl(int button, int state, int x, int y)
             }
             else if (primitive == PIRAMIDE)
             {
+                printf("x %d y %d", x, y);
+                fflush(stdout);
 
                 if (pointCount == 0)
                 {
+                    pontoPiramideTemp.push_back(Point(x, y));
                     xini = x;
                     yini = y;
                     pointCount++;
                 }
-                if (pointCount > 0)
+                else if (pointCount > 0)
                 {
-
-                    if ((x < (xini + 0.1)) && (x > (xini - 0.1)) && (y < (yini + 0.1)) && (y < (yini + 0.1)))
+                    // para finalizar a piramide precisa ter ao menos 3 vertices
+                    if ((x < (xini + 5)) && (x > (xini - 5)) && (y < (yini + 5)) && (y > (yini - 5)) && (pointCount > 2))
                     {
+                        printf("detrno");
+                        fflush(stdout);
                         // se finaliza a piramide
                         //[ ] altura 5 por enquanto pq eu nao sei como vai ser inserida
-                        piramides.push_back(Piramide(tempX, tempY, x, y, 1));
+                        //[ ] por enquanto o topo vai ser no centro, entao manda 0
+                        piramides.push_back(Piramide(pontoPiramideTemp, 1, 0, 0));
                         pointCount = 0;
                         xini = 0;
                         yini = 0;
+                        // limpa todos os pontos temporarios
+                         pontoPiramideTemp.clear();
                     }
                     else
                     {
-                        //TODO testar
-                        pontoPiramide.push_back(Point(x,y));
-                        tX2 = x;
-                        tY2 = y;
+                        // TODO testar
+                        pontoPiramideTemp.push_back(Point(x, y));
+                        // tX2 = x;
+                        // tY2 = y;
                         pointCount++;
                     }
                 }
@@ -582,6 +641,44 @@ void keyInput(unsigned char key, int x, int y)
     case 27:
         exit(0);
         break;
+
+    case 'x':
+        Xangle += 1.0;
+        if (Xangle > 360.0)
+            Xangle -= 360.0;
+        glutPostRedisplay();
+        break;
+    case 'X':
+        Xangle -= 1.0;
+        if (Xangle < 0.0)
+            Xangle += 360.0;
+        glutPostRedisplay();
+        break;
+    case 'y':
+        Yangle += 1.0;
+        if (Yangle > 360.0)
+            Yangle -= 360.0;
+        glutPostRedisplay();
+        break;
+    case 'Y':
+        Yangle -= 1.0;
+        if (Yangle < 0.0)
+            Yangle += 360.0;
+        glutPostRedisplay();
+        break;
+    case 'z':
+        Zangle += 1.0;
+        if (Zangle > 360.0)
+            Zangle -= 360.0;
+        glutPostRedisplay();
+        break;
+    case 'Z':
+        Zangle -= 1.0;
+        if (Zangle < 0.0)
+            Zangle += 360.0;
+        glutPostRedisplay();
+        break;
+
     default:
         break;
     }
