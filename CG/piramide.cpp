@@ -55,6 +55,9 @@ static int topo;
 
 static float Xangle = 0.0, Yangle = 0.0, Zangle = 0.0; // Angles to rotate scene.
 
+// variaveis globais pra registrar o ponteiro do mouse
+int MouseX, MouseY;
+
 // Point class.
 class Point
 {
@@ -222,23 +225,14 @@ void Piramide::drawPiramide()
     glBegin(GL_LINE_LOOP);
 
     pontosI = pontos.begin();
-    // pra calcular o meio
-    //int xtotal = 0, ytotal = 0, quant = 0;
     while (pontosI != pontos.end())
     {
         // piramidesIterator->drawPiramide();
         glVertex3f(pontosI->getX(), pontosI->getY(), 0.0f);
         pontosI++;
-        //quant++;
-        //xtotal += pontosI->getX();
-        //ytotal += pontosI->getY();
-        // printf("xmedio %d ymedio %d quant %d",xtotal,ytotal,quant);
-        // fflush(stdout);
     }
     glEnd();
 
-    //int xmedio = (xtotal / quant);
-   // int ymedio = (ytotal / quant);
     glBegin(GL_LINES);
 
     // puxa uma linha de cada extremidade do retangulo para a ponta da piramide
@@ -431,7 +425,70 @@ void drawTempPoint(void)
         pontosI->drawPoint();
         pontosI++;
     }
-    // desenhar o ponto inicial
+
+    // desenhar as linhas da base da piramide
+    if (pointCount > 0)
+    {
+        glBegin(GL_LINES);
+        // glColor3f(0.0, 1.0, 0.0);
+        pontosI = pontoPiramideTemp.begin();
+        // para começar pega o primeiro ponto
+        int xant = pontosI->getX(), yant = pontosI->getY();
+        pontosI++;
+        while (pontosI != pontoPiramideTemp.end())
+        {
+            // piramidesIterator->drawPiramide();
+            glVertex3f(xant, yant, 0.0f);
+            glVertex3f(pontosI->getX(), pontosI->getY(), 0.0f);
+            xant = pontosI->getX();
+            yant = pontosI->getY();
+            pontosI++;
+        }
+        glEnd();
+
+        // volta pro ultimo ponto
+        pontosI = pontoPiramideTemp.end();
+        /// funcionou com isso daqui, nao sei como kkkkkk
+        pontosI--;
+        glBegin(GL_LINES);
+
+        // desenha uma linha ate o mouse
+        glVertex3f(pontosI->getX(), pontosI->getY(), 0.0f);
+        glVertex3f(MouseX, MouseY, 0);
+        glEnd();
+        // sem clicar
+    }
+
+    if (topo)
+    {
+        // desenha a ultima linha que fecha o loop da base da piramide
+        glBegin(GL_LINES);
+
+        pontosI = pontoPiramideTemp.begin();
+        glVertex3f(pontosI->getX(), pontosI->getY(), 0.0f);
+
+        pontosI = pontoPiramideTemp.end();
+        pontosI--;
+        glVertex3f(pontosI->getX(), pontosI->getY(), 0.0f);
+        //glEnd();
+
+        // puxa uma linha de cada extremidade do retangulo para a ponta da piramide
+        //glBegin(GL_LINES);
+        // vector<Point>::iterator pontosI;
+        pontosI = pontoPiramideTemp.begin();
+        while (pontosI != pontoPiramideTemp.end())
+        {
+            // piramidesIterator->drawPiramide();
+            glVertex3f(pontosI->getX(), pontosI->getY(), 0.0f);
+            // TODO registrar altura
+            glVertex3f(MouseX, MouseY, 1);
+            pontosI++;
+            // std::cout << "Passive Mouse Position: X=" << x << " Y=" << y << std::endl;
+        }
+        glEnd();
+    }
+    // avisa o glut que a tela mudou
+    glutPostRedisplay();
 }
 
 // Function to draw a grid.
@@ -463,6 +520,10 @@ void drawScene(void)
 {
     glClear(GL_COLOR_BUFFER_BIT);
     glColor3f(0.0, 0.0, 0.0);
+
+    // para nao ficar rodando pra sempre
+    // TODO nao funcionou ainda
+    glLoadIdentity();
 
     drawPointSelectionBox();
     drawLineSelectionBox();
@@ -579,14 +640,14 @@ void mouseControl(int button, int state, int x, int y)
                 {
                     if (topo == 1)
                     {
-                        //vai colocar o topo
+                        // vai colocar o topo
                         piramides.push_back(Piramide(pontoPiramideTemp, 1, x, y));
                         pointCount = 0;
                         xini = 0;
                         yini = 0;
                         // limpa todos os pontos temporarios
                         pontoPiramideTemp.clear();
-                        topo=0;
+                        topo = 0;
                     }
                     // para finalizar a piramide precisa ter ao menos 3 vertices
                     else if ((x < (xini + 5)) && (x > (xini - 5)) && (y < (yini + 5)) && (y > (yini - 5)) && (pointCount > 2))
@@ -596,8 +657,8 @@ void mouseControl(int button, int state, int x, int y)
                         // se finaliza a piramide
                         //[ ] altura 5 por enquanto pq eu nao sei como vai ser inserida
                         //[ ] por enquanto o topo vai ser no centro, entao manda 0
-                        topo=1;
-                        //pontoPiramideTemp.push_back(Point(x, y));
+                        topo = 1;
+                        // pontoPiramideTemp.push_back(Point(x, y));
                     }
                     else
                     {
@@ -612,6 +673,16 @@ void mouseControl(int button, int state, int x, int y)
         }
     }
     glutPostRedisplay();
+}
+
+// Callback for mouse movement when NO buttons are pressed
+void processPassiveMotion(int x, int y)
+{
+
+    y = height - y; // Correct from mouse to OpenGL co-ordinates.
+    // sem clicar
+    MouseX = x;
+    MouseY = y;
 }
 
 // Initialization routine.
@@ -760,6 +831,7 @@ int main(int argc, char **argv)
     glutInitWindowPosition(100, 100);
     glutCreateWindow("canvas.cpp");
     setup();
+    glutPassiveMotionFunc(processPassiveMotion);
     glutDisplayFunc(drawScene);
     glutReshapeFunc(resize);
     glutKeyboardFunc(keyInput);
