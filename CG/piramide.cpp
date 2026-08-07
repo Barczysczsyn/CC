@@ -47,10 +47,10 @@ static int pointCount = 0;       // Number of  specified points.
 static int tempX, tempY;         // Co-ordinates of clicked point.
 static int isGrid = 1;           // Is there grid?
 
-
 // coordenada do ponto inicial da piramide
 static int xini, yini;
-
+// so pra saber se vai mexer no topo ou nao
+static int topo;
 // rotacionar cena
 
 static float Xangle = 0.0, Yangle = 0.0, Zangle = 0.0; // Angles to rotate scene.
@@ -223,22 +223,22 @@ void Piramide::drawPiramide()
 
     pontosI = pontos.begin();
     // pra calcular o meio
-    int xtotal = 0, ytotal = 0, quant = 0;
+    //int xtotal = 0, ytotal = 0, quant = 0;
     while (pontosI != pontos.end())
     {
         // piramidesIterator->drawPiramide();
         glVertex3f(pontosI->getX(), pontosI->getY(), 0.0f);
         pontosI++;
-        quant++;
-        xtotal += pontosI->getX();
-        ytotal += pontosI->getY();
+        //quant++;
+        //xtotal += pontosI->getX();
+        //ytotal += pontosI->getY();
         // printf("xmedio %d ymedio %d quant %d",xtotal,ytotal,quant);
         // fflush(stdout);
     }
     glEnd();
 
-    int xmedio = (xtotal / quant);
-    int ymedio = (ytotal / quant);
+    //int xmedio = (xtotal / quant);
+   // int ymedio = (ytotal / quant);
     glBegin(GL_LINES);
 
     // puxa uma linha de cada extremidade do retangulo para a ponta da piramide
@@ -247,7 +247,7 @@ void Piramide::drawPiramide()
     {
         // piramidesIterator->drawPiramide();
         glVertex3f(pontosI->getX(), pontosI->getY(), 0.0f);
-        glVertex3f(xmedio, ymedio, h);
+        glVertex3f(xtopo, ytopo, h);
         pontosI++;
     }
     glEnd();
@@ -404,14 +404,13 @@ void drawInactiveArea(void)
 // Function to draw temporary point.
 void drawTempPoint(void)
 {
-    //desenha o inicial da piramide
+    // desenha o inicial da piramide
 
     glColor3f(1.0, 1.0, 0.0);
     glPointSize(5);
     glBegin(GL_POINTS);
     glVertex3f(xini, yini, 0.0);
     glEnd();
-
 
     glColor3f(0.0, 1.0, 0.0);
     glPointSize(pointSize);
@@ -420,7 +419,6 @@ void drawTempPoint(void)
     glEnd();
     // pra piramide
     // glVertex3f(tX2, tY2, 0.0);
-
 
     // desenha os pontos temporarios
 
@@ -489,7 +487,7 @@ void drawScene(void)
         drawTempPoint();
 
     // tambem desenha nas piramides
-    if ((primitive == PIRAMIDE) && (pointCount < 3))
+    if ((primitive == PIRAMIDE))
         drawTempPoint();
     if (isGrid)
         drawGrid();
@@ -579,20 +577,27 @@ void mouseControl(int button, int state, int x, int y)
                 }
                 else if (pointCount > 0)
                 {
+                    if (topo == 1)
+                    {
+                        //vai colocar o topo
+                        piramides.push_back(Piramide(pontoPiramideTemp, 1, x, y));
+                        pointCount = 0;
+                        xini = 0;
+                        yini = 0;
+                        // limpa todos os pontos temporarios
+                        pontoPiramideTemp.clear();
+                        topo=0;
+                    }
                     // para finalizar a piramide precisa ter ao menos 3 vertices
-                    if ((x < (xini + 5)) && (x > (xini - 5)) && (y < (yini + 5)) && (y > (yini - 5)) && (pointCount > 2))
+                    else if ((x < (xini + 5)) && (x > (xini - 5)) && (y < (yini + 5)) && (y > (yini - 5)) && (pointCount > 2))
                     {
                         printf("detrno");
                         fflush(stdout);
                         // se finaliza a piramide
                         //[ ] altura 5 por enquanto pq eu nao sei como vai ser inserida
                         //[ ] por enquanto o topo vai ser no centro, entao manda 0
-                        piramides.push_back(Piramide(pontoPiramideTemp, 1, 0, 0));
-                        pointCount = 0;
-                        xini = 0;
-                        yini = 0;
-                        // limpa todos os pontos temporarios
-                         pontoPiramideTemp.clear();
+                        topo=1;
+                        //pontoPiramideTemp.push_back(Point(x, y));
                     }
                     else
                     {
