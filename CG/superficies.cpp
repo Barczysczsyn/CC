@@ -283,7 +283,7 @@ void le_tecla(unsigned char key, int x, int y){
     		eixoy = (eixoy - 5) % 360;
     		glutPostRedisplay();
     	break;
-      case'o':
+      case 'o':
       	eixox = eixoy = eixoz = 0;
          glutPostRedisplay();
       break;
