@@ -398,6 +398,7 @@ void drawInactiveArea(void)
 void drawTempPoint(void)
 {
 
+    //desenha os pontos normais
     glColor3f(0.0, 1.0, 0.0);
     glPointSize(pointSize);
     glBegin(GL_POINTS);
@@ -410,11 +411,14 @@ void drawTempPoint(void)
 
         // desenha o inicial da piramide
 
-        glColor3f(1.0, 1.0, 0.0);
-        glPointSize(5);
-        glBegin(GL_POINTS);
-        glVertex3f(xini, yini, 0.0);
-        glEnd();
+        if (pointCount > 2)
+        {
+            glColor3f(1.0, 1.0, 0.0);
+            glPointSize(5);
+            glBegin(GL_POINTS);
+            glVertex3f(xini, yini, 0.0);
+            glEnd();
+        }
         // desenha os pontos temporarios
 
         glColor3f(0.0, 1.0, 0.0);
@@ -531,7 +535,6 @@ void drawScene(void)
     // glRotatef((GLfloat)eixoy, 0.0, 1.0, 0.0);
     // glRotatef((GLfloat)eixox, 1.0, 0.0, 0.0);
     // glPopMatrix();
-
 
     drawPointSelectionBox();
     drawLineSelectionBox();
@@ -723,6 +726,7 @@ void resize(int w, int h)
     glLoadIdentity();
 
     // Set viewing box dimensions equal to window dimensions.
+    // tamanho ajustado para 3d
     glOrtho(0.0, (float)w, 0.0, (float)h, -500.0, 500.0);
 
     // Pass the size of the OpenGL window to globals.
@@ -798,6 +802,7 @@ void clearAll(void)
     points.clear();
     lines.clear();
     rectangles.clear();
+    piramides.clear();
     primitive = INACTIVE;
     pointCount = 0;
 }
