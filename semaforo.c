@@ -7,11 +7,7 @@
 #include <unistd.h>
 #include <semaphore.h>
 
-// variavel global
-int c1 = 1, c2 = 0, c3 = 0, c4 = 0;
-
-sem_t *sp = sem_open("/mysem", O_CREAT, 0660, 1);
-sem_wait(sp);           /* correct: use the pointer directly */
+sem_t *s1,*s2,*s3;
 struct s_no
 {
     int num;
@@ -47,11 +43,8 @@ static void *printaLista(void *args)
 {
     // printf("\nlista");
     //   contador
-    while (c4 >= c3 + 1)
-    {
-        // assim ele vai esperar
-        ;
-    }
+    //TODO acho que é assim
+    sem_wait(s3);
     struct s_no *pont = (struct s_no *)args;
     if (pont != NULL)
     {
@@ -66,8 +59,9 @@ static void *printaLista(void *args)
         }
     }
     fflush(stdout);
+    //sem_post(s4);
     // so pra ele nao reclamar
-    c4++;
+    
     return args;
 }
 
@@ -92,7 +86,9 @@ void inserirTotal(struct s_no **pont, int *num, int tam)
 
         // ir pra frente
         atual = atual->prox;
-        c1++;
+        //c1++;
+        //incrementa 1
+        sem_post(s1);
     }
 }
 
@@ -117,11 +113,12 @@ static void *removerPares(void *args)
     // achar o no
     while (p1 != NULL)
     {
-        while (c2 >= c1 + 1)
-        {
-            // assim ele vai esperar
-            ;
-        }
+        // while (c2 >= c1 + 1)
+        // {
+        //     // assim ele vai esperar
+        //     ;
+        // }
+        sem_wait(s1);
         if ((p1->num % 2 == 0) && (p1->num != 2))
         {
 
@@ -139,7 +136,8 @@ static void *removerPares(void *args)
             ant = p1;
             p1 = p1->prox;
         }
-        c2++;
+        //c2++;
+        sem_post(s2);
     }
 
     // se o no for achado
@@ -170,11 +168,12 @@ static void *removerPrimos(void *args)
     // achar o no
     while (p1 != NULL)
     {
-        while (c3 >= c2 + 1)
-        {
-            // assim ele vai esperar
-            ;
-        }
+        // while (c3 >= c2 + 1)
+        // {
+        //     // assim ele vai esperar
+        //     ;
+        // }
+        sem_wait(s2);
         if (!primo(p1->num))
         {
 
@@ -192,7 +191,8 @@ static void *removerPrimos(void *args)
             ant = p1;
             p1 = p1->prox;
         }
-        ++c3;
+        //++c3;
+        sem_post(s3);
     }
 
     // so pra ele nao reclamar
@@ -206,7 +206,6 @@ int main()
     // TODO inserir com ponteiro pro ultimo
     struct s_no *FL = NULL;
     // L->prox = NULL;
-
 
     // thread principal
 
@@ -255,11 +254,20 @@ int main()
     // FIXME teoricamente tá certo, mas da um erro desgraçado
     //  free(texto);
 
+    //XXX
+    //cria os semaforos
+    s1 = sem_open("/sem1", O_CREAT, 0660, 0);
+    s2 = sem_open("/sem2", O_CREAT, 0660, 0);
+    s3 = sem_open("/sem3", O_CREAT, 0660, 0);
+    //s4 = sem_open("/sem4", O_CREAT, 0660, 4);
     // thread principal
     inserirTotal(&L, numeros, nms);
     // thread principal
 
     // printaLista(L);
+
+    //BUG segfault
+    //TODO DEU CERTO???
 
     pthread_t *thread_id[3] = {NULL, NULL, NULL};
 
@@ -285,7 +293,7 @@ int main()
 
     // FIXME corrupted size vs. prev_size
     // causado pelo fclose de alguma forma???
-    //  
+    //
 
     pthread_join(thread_id[0], NULL);
     pthread_join(thread_id[1], NULL);
@@ -294,3 +302,7 @@ int main()
     fclose(arqv);
     return 0;
 }
+
+
+//HACK é provavelmente melhor criar um semaforo por secao critica
+//o semaforo só nao deixa uma coisa ser acessada duas vezes ao mesmo tempo

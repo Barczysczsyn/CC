@@ -12,7 +12,7 @@
 ////////////////////////////////////////////////////////////////////////////////////
 
 // rotacao e translacao apenas nos eixos canonicos (x,y,z)
-
+/// A PARTIR DE AGORA VOU FAZER A TEMP
 #include <cstdlib>
 #include <vector>
 #include <iostream>
@@ -63,6 +63,9 @@ static int coordY;
 static int xTopo, yTopo;
 static int altura = 0;
 
+//para mudar o planop
+int PLANO = 1;
+
 // Point class.
 class Point
 {
@@ -96,8 +99,18 @@ void Point::drawPoint()
 {
     glPointSize(size);
     glBegin(GL_POINTS);
-    glVertex3f(x, y, 0.0);
+    if(PLANO == 1){
+
+        glVertex3f(x, y, 0.0);
+    }else if (PLANO == 2){
+
+        glVertex3f(x, 0.0, y);
+    }else if (PLANO == 3){
+
+        glVertex3f(0.0,x, y);
+    }
     glEnd();
+
 }
 
 // Vector of points.
@@ -207,17 +220,18 @@ void drawRectangles(void)
 class Piramide
 {
 public:
-    Piramide(vector<Point> pts, int altura, int xt, int yt)
+    Piramide(vector<Point> pts, int altura, int xt, int yt, int pl)
     {
         pontos = pts;
         h = altura;
         xtopo = xt;
         ytopo = yt;
+        plano = pl;
     }
     void drawPiramide();
 
 private:
-    int xtopo, ytopo, h; // x and y co-ordinates of diagonally opposite vertices.
+    int xtopo, ytopo, h,plano; // x and y co-ordinates of diagonally opposite vertices.
     vector<Point> pontos;
 };
 
@@ -230,7 +244,15 @@ void Piramide::drawPiramide()
     while (pontosI != pontos.end())
     {
         // piramidesIterator->drawPiramide();
+        if(plano == 1){
         glVertex3f(pontosI->getX(), pontosI->getY(), 0.0f);
+        }else if(plano == 2){
+
+        glVertex3f(pontosI->getX(),  0.0f,pontosI->getY());
+        }else if(plano == 3){
+
+        glVertex3f(0.0f,pontosI->getX(), pontosI->getY());
+        }
         pontosI++;
     }
     glEnd();
@@ -242,8 +264,17 @@ void Piramide::drawPiramide()
     while (pontosI != pontos.end())
     {
         // piramidesIterator->drawPiramide();
-        glVertex3f(pontosI->getX(), pontosI->getY(), 0.0f);
-        glVertex3f(xtopo, ytopo, h);
+        if(plano == 1){
+            glVertex3f(pontosI->getX(), pontosI->getY(), 0.0f);
+            glVertex3f(xtopo, ytopo, h);
+        }else if(plano == 2){
+            glVertex3f(pontosI->getX(), 0.0f, pontosI->getY());
+            glVertex3f(xtopo, h,ytopo);
+        }else if(plano == 3){
+
+            glVertex3f( 0.0f,pontosI->getX(), pontosI->getY());
+            glVertex3f(h,xtopo, ytopo);
+        }
         pontosI++;
     }
     glEnd();
@@ -398,7 +429,6 @@ void drawInactiveArea(void)
 void drawTempPoint(void)
 {
 
-    //desenha os pontos normais
     glColor3f(0.0, 1.0, 0.0);
     glPointSize(pointSize);
     glBegin(GL_POINTS);
@@ -416,7 +446,17 @@ void drawTempPoint(void)
             glColor3f(1.0, 1.0, 0.0);
             glPointSize(5);
             glBegin(GL_POINTS);
+
+    if(PLANO == 1){
+
             glVertex3f(xini, yini, 0.0);
+    }else if (PLANO == 2){
+
+            glVertex3f(xini, 0.0, yini);
+    }else if (PLANO == 3){
+        
+            glVertex3f(0.0,xini, yini );
+    }
             glEnd();
         }
         // desenha os pontos temporarios
@@ -444,8 +484,20 @@ void drawTempPoint(void)
             while (pontosI != pontoPiramideTemp.end())
             {
                 // piramidesIterator->drawPiramide();
+
+    if(PLANO == 1){
+
                 glVertex3f(xant, yant, 0.0f);
                 glVertex3f(pontosI->getX(), pontosI->getY(), 0.0f);
+    }else if (PLANO == 2){
+
+                glVertex3f(xant, 0.0f, yant);
+                glVertex3f(pontosI->getX(), 0.0f,pontosI->getY());
+    }else if (PLANO == 3){
+        
+                glVertex3f( 0.0f,xant, yant);
+                glVertex3f(0.0f,pontosI->getX(), pontosI->getY() );
+    }
                 xant = pontosI->getX();
                 yant = pontosI->getY();
                 pontosI++;
@@ -458,8 +510,20 @@ void drawTempPoint(void)
             glBegin(GL_LINES);
 
             // desenha uma linha ate o mouse
+
+    if(PLANO == 1){
+
             glVertex3f(pontosI->getX(), pontosI->getY(), 0.0f);
             glVertex3f(MouseX, MouseY, 0);
+    }else if (PLANO == 2){
+
+            glVertex3f(pontosI->getX(), 0.0f, pontosI->getY());
+            glVertex3f(MouseX,  0,MouseY);
+    }else if (PLANO == 3){
+        
+            glVertex3f(0.0f,pontosI->getX(), pontosI->getY());
+            glVertex3f(0,MouseX, MouseY);
+    }
             glEnd();
             // sem clicar
         }
@@ -471,12 +535,31 @@ void drawTempPoint(void)
             // {
             glBegin(GL_LINES);
 
+    if(PLANO == 1){
+
             pontosI = pontoPiramideTemp.begin();
             glVertex3f(pontosI->getX(), pontosI->getY(), 0.0f);
 
             pontosI = pontoPiramideTemp.end();
             pontosI--;
             glVertex3f(pontosI->getX(), pontosI->getY(), 0.0f);
+    }else if (PLANO == 2){
+
+            pontosI = pontoPiramideTemp.begin();
+            glVertex3f(pontosI->getX(),0.0f , pontosI->getY());
+
+            pontosI = pontoPiramideTemp.end();
+            pontosI--;
+            glVertex3f(pontosI->getX(), 0.0f, pontosI->getY());
+    }else if (PLANO == 3){
+        
+            pontosI = pontoPiramideTemp.begin();
+            glVertex3f(0.0f,pontosI->getX(), pontosI->getY());
+
+            pontosI = pontoPiramideTemp.end();
+            pontosI--;
+            glVertex3f(0.0f,pontosI->getX(), pontosI->getY());
+    }
             glEnd();
             //}
 
@@ -487,8 +570,20 @@ void drawTempPoint(void)
             while (pontosI != pontoPiramideTemp.end())
             {
                 // piramidesIterator->drawPiramide();
+
+    if(PLANO == 1){
+
                 glVertex3f(pontosI->getX(), pontosI->getY(), 0.0f);
                 glVertex3f(MouseX, MouseY, altura);
+    }else if (PLANO == 2){
+
+                glVertex3f(pontosI->getX(), 0.0f, pontosI->getY());
+                glVertex3f(MouseX, altura,MouseY);
+    }else if (PLANO == 3){
+        
+                glVertex3f(0.0f,pontosI->getX(), pontosI->getY());
+                glVertex3f(altura,MouseX, MouseY);
+    }
                 pontosI++;
                 // std::cout << "Passive Mouse Position: X=" << x << " Y=" << y << std::endl;
             }
@@ -509,6 +604,8 @@ void drawGrid(void)
     glColor3f(0.75, 0.75, 0.75);
 
     glBegin(GL_LINES);
+
+        //original
     for (i = 2; i <= 9; i++)
     {
         glVertex3f(i * 0.1 * width, 0.0, 0.0);
@@ -519,6 +616,8 @@ void drawGrid(void)
         glVertex3f(0.1 * width, i * 0.1 * height, 0.0);
         glVertex3f(width, i * 0.1 * height, 0.0);
     }
+
+        //original
     glEnd();
     glDisable(GL_LINE_STIPPLE);
 }
@@ -532,8 +631,6 @@ void drawScene(void)
     // rotacionar cena
 
     glLoadIdentity(); // Reset transformation matrix state
-    // glRotatef((GLfloat)eixoy, 0.0, 1.0, 0.0);
-    // glRotatef((GLfloat)eixox, 1.0, 0.0, 0.0);
     // glPopMatrix();
 
     drawPointSelectionBox();
@@ -545,6 +642,8 @@ void drawScene(void)
 
     glPushMatrix();
 
+    //puxa pra tras pra poder ver no angulo yz
+    glTranslatef(0.0, 0.0, -10);
     // glTranslatef(-width,-height,0);
     glRotatef((GLfloat)eixoy, 0.0, 1.0, 0.0);
     glRotatef((GLfloat)eixox, 1.0, 0.0, 0.0);
@@ -559,13 +658,15 @@ void drawScene(void)
     glPushMatrix();
     drawPiramides();
 
-    glPopMatrix();
     if (((primitive == LINE) || (primitive == RECTANGLE)) && (pointCount == 1))
         drawTempPoint();
 
     // tambem desenha nas piramides
     if ((primitive == PIRAMIDE))
         drawTempPoint();
+
+
+    glPopMatrix();
     if (isGrid)
         drawGrid();
 
@@ -663,7 +764,7 @@ void mouseControl(int button, int state, int x, int y)
                     else if (topo == 2)
                     {
                         // a altura vai ser a diferenca entre o ponto atual e o ponto onde o mouse clicou
-                        piramides.push_back(Piramide(pontoPiramideTemp, altura, xTopo, yTopo));
+                        piramides.push_back(Piramide(pontoPiramideTemp, altura, xTopo, yTopo,PLANO));
                         pointCount = 0;
                         xini = 0;
                         yini = 0;
@@ -726,7 +827,6 @@ void resize(int w, int h)
     glLoadIdentity();
 
     // Set viewing box dimensions equal to window dimensions.
-    // tamanho ajustado para 3d
     glOrtho(0.0, (float)w, 0.0, (float)h, -500.0, 500.0);
 
     // Pass the size of the OpenGL window to globals.
@@ -791,6 +891,15 @@ void keyInput(unsigned char key, int x, int y)
         tY += 1;
         glutPostRedisplay();
         break;
+
+    case 'f':
+        tZ += 1;
+        glutPostRedisplay();
+        break;
+    case 't':
+        tZ -= 1;
+        glutPostRedisplay();
+        break;
     default:
         break;
     }
@@ -817,6 +926,12 @@ void rightMenu(int id)
     }
     if (id == 2)
         exit(0);
+    if (id == 3)
+    PLANO = 1;
+    if (id == 4)
+    PLANO = 2;
+    if (id == 5)
+    PLANO = 3;
 }
 
 // The sub-menu callback function.
@@ -841,6 +956,9 @@ void makeMenu(void)
     glutAddSubMenu("Grid", sub_menu);
     glutAddMenuEntry("Clear", 1);
     glutAddMenuEntry("Quit", 2);
+    glutAddMenuEntry("plano XY", 3);
+    glutAddMenuEntry("plano XZ", 4);
+    glutAddMenuEntry("plano ZY", 5);
     glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
 
@@ -856,7 +974,8 @@ void printInteraction(void)
          << "rotacione no eixo X com as teclas X e x e no eixo Y com as teclas Y e y." << endl;
     cout << "para criar piramides, primeiramente clique para criar os vertices da base, e clique no primeiro para fechar o ciclo" << endl
          << "então clique na posição onde será o topo da pirâmide" << endl
-         << "e finalmente mova o cursor para cima para aumentar a altura e para baixo para diminuir, confirmando com um clique." << endl;
+         << "e finalmente mova o cursor para cima para aumentar a altura e para baixo para diminuir, confirmando com um clique." << endl
+         << "para os outros planos funcionarem, é necessário girar totalmente a tela para eles" << endl;
 }
 
 // Main routine.
