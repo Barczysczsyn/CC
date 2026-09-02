@@ -7,7 +7,8 @@
 #include <unistd.h>
 #include <semaphore.h>
 
-sem_t *s1,*s2,*s3;
+
+    pthread_mutex_t *mutexes;
 struct s_no
 {
     int num;
@@ -58,9 +59,9 @@ static void *printaLista(void *args)
         }
     }
     fflush(stdout);
-    //sem_post(s4);
-    // so pra ele nao reclamar
-    
+    // sem_post(s4);
+    //  so pra ele nao reclamar
+
     return args;
 }
 
@@ -85,14 +86,15 @@ void inserirTotal(struct s_no **pont, int *num, int tam)
 
         // ir pra frente
         atual = atual->prox;
-        //c1++;
-        //incrementa 1
-        sem_post(s1);
+        // c1++;
+        // incrementa 1
+        pthread_mutex_unlock(&m1);
     }
 }
 
 static void *removerPares(void *args)
 {
+    int cont = 0;
     // void *saida;
     struct s_no **pont = (struct s_no **)args;
 
@@ -117,7 +119,7 @@ static void *removerPares(void *args)
         //     // assim ele vai esperar
         //     ;
         // }
-        sem_wait(s1);
+        pthread_mutex_lock(&mutexes[cont]);
         if ((p1->num % 2 == 0) && (p1->num != 2))
         {
 
@@ -135,8 +137,8 @@ static void *removerPares(void *args)
             ant = p1;
             p1 = p1->prox;
         }
-        //c2++;
-        sem_post(s2);
+        // c2++;
+        pthread_mutex_unlock(&m2);
     }
 
     // se o no for achado
@@ -247,18 +249,18 @@ int main()
     //  strtok
     //
     //  free(texto);
+    mutexes = malloc(nms * sizeof(pthread_mutex_t));
+    for (int i = 0; i < nms; i++)
+    {
+        mutexes[i] = PTHREAD_MUTEX_INITIALIZER;
+    }
 
-    //cria os semaforos
-    s1 = sem_open("/sem1", O_CREAT, 0660, 0);
-    s2 = sem_open("/sem2", O_CREAT, 0660, 0);
-    s3 = sem_open("/sem3", O_CREAT, 0660, 0);
-    //s4 = sem_open("/sem4", O_CREAT, 0660, 4);
-    // thread principal
+    // s4 = sem_open("/sem4", O_CREAT, 0660, 4);
+    //  thread principal
     inserirTotal(&L, numeros, nms);
     // thread principal
 
     // printaLista(L);
-
 
     pthread_t *thread_id[3] = {NULL, NULL, NULL};
 
