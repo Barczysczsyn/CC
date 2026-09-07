@@ -7,12 +7,11 @@
 #include <unistd.h>
 #include <semaphore.h>
 
-
-    pthread_mutex_t *mutexes;
 struct s_no
 {
     int num;
     struct s_no *prox;
+    pthread_mutex_t mutex;
 };
 // #define s_no struct s_no
 
@@ -40,38 +39,19 @@ int primo(int numero)
     }
     return 1;
 }
-static void *printaLista(void *args)
-{
-    // printf("\nlista");
-    //   contador
-    sem_wait(s3);
-    struct s_no *pont = (struct s_no *)args;
-    if (pont != NULL)
-    {
-        printf("\n");
-
-        printf("%d ", pont->num);
-        struct s_no *p1 = pont->prox;
-        while ((p1 != NULL))
-        {
-            printf("%d ", p1->num);
-            p1 = p1->prox;
-        }
-    }
-    fflush(stdout);
-    // sem_post(s4);
-    //  so pra ele nao reclamar
-
-    return args;
-}
 
 // insere tudo de uma só vez
 void inserirTotal(struct s_no **pont, int *num, int tam)
 {
     // coloca o primeiro elemento na lista
     struct s_no *novo = malloc(sizeof(struct s_no));
+    // basicamente não vai usar, mas vou colocar pra ficar mais consistente
+    pthread_mutex_init(&(novo->mutex), NULL);
+    pthread_mutex_lock(&(novo->mutex));
     novo->num = num[0];
     novo->prox = NULL;
+
+    pthread_mutex_unlock(&(novo->mutex));
     (*pont) = novo;
 
     struct s_no *atual = (*pont);
@@ -79,6 +59,9 @@ void inserirTotal(struct s_no **pont, int *num, int tam)
     {
 
         struct s_no *novo = malloc(sizeof(struct s_no));
+        pthread_mutex_init(&(novo->mutex), NULL);
+        // TODO testar
+        pthread_mutex_lock(&(novo->mutex));
         novo->num = num[i];
         novo->prox = NULL;
 
@@ -88,16 +71,22 @@ void inserirTotal(struct s_no **pont, int *num, int tam)
         atual = atual->prox;
         // c1++;
         // incrementa 1
-        pthread_mutex_unlock(&m1);
+        pthread_mutex_unlock(&(novo->mutex));
+        // printf("\ncheguei %i", i);
+        fflush(stdout);
     }
 }
 
 static void *removerPares(void *args)
 {
-    int cont = 0;
-    // void *saida;
+    // FIXME tirar?
+    // int cont = 0;
+    //  void *saida;
     struct s_no **pont = (struct s_no **)args;
 
+    // remove o primeiro nó
+
+    // FIXME ver se ta certo
     if (*pont == NULL)
     {
 
@@ -106,23 +95,23 @@ static void *removerPares(void *args)
     }
     else if (((*pont)->num % 2 == 0) && ((*pont)->num != 2))
     {
+        // TODO nao sei nem se precisa
+        pthread_mutex_lock(&(*pont)->mutex);
         struct s_no *temp = *pont;
+        pthread_mutex_unlock(&(*pont)->mutex);
         *pont = (*pont)->prox;
         free(temp);
     }
+
     struct s_no *ant = *pont, *p1 = (*pont)->prox;
     // achar o no
     while (p1 != NULL)
     {
-        // while (c2 >= c1 + 1)
-        // {
-        //     // assim ele vai esperar
-        //     ;
-        // }
-        pthread_mutex_lock(&mutexes[cont]);
+        // TODO testar
+        pthread_mutex_lock(&p1->mutex);
+
         if ((p1->num % 2 == 0) && (p1->num != 2))
         {
-
             // printf("\nremovido %d", p1->num);
             // fflush(stdout);
             //    teoricamente funciona
@@ -130,19 +119,24 @@ static void *removerPares(void *args)
 
             struct s_no *temp = p1;
             p1 = p1->prox;
+
+            // aparentemente precisa destruir o mutex
+            pthread_mutex_unlock(&temp->mutex);
+            pthread_mutex_destroy(&temp->mutex);
             free(temp);
         }
         else
         {
+            pthread_mutex_unlock(&ant->mutex);
             ant = p1;
             p1 = p1->prox;
         }
         // c2++;
-        pthread_mutex_unlock(&m2);
     }
 
     // se o no for achado
 
+    pthread_mutex_unlock(&ant->mutex);
     // so pra ele nao reclamar
     return args;
 }
@@ -168,12 +162,8 @@ static void *removerPrimos(void *args)
     // achar o no
     while (p1 != NULL)
     {
-        // while (c3 >= c2 + 1)
-        // {
-        //     // assim ele vai esperar
-        //     ;
-        // }
-        sem_wait(s2);
+        pthread_mutex_lock(&p1->mutex);
+        // TODO testar
         if (!primo(p1->num))
         {
 
@@ -184,18 +174,52 @@ static void *removerPrimos(void *args)
 
             struct s_no *temp = p1;
             p1 = p1->prox;
+            // aparentemente precisa destruir o mutex
+            pthread_mutex_unlock(&temp->mutex);
+            pthread_mutex_destroy(&temp->mutex);
             free(temp);
         }
         else
         {
+            // destrava o anterior
+            pthread_mutex_unlock(&ant->mutex);
             ant = p1;
             p1 = p1->prox;
         }
-        //++c3;
-        sem_post(s3);
+        // TODO testar
     }
 
+    pthread_mutex_unlock(&ant->mutex);
     // so pra ele nao reclamar
+    return args;
+}
+
+static void *printaLista(void *args)
+{
+    // BUG
+    struct s_no *pont = (struct s_no *)args;
+    if (pont != NULL)
+    {
+        printf("\n");
+
+        pthread_mutex_lock(&pont->mutex);
+        printf("%d ", pont->num);
+        pthread_mutex_unlock(&pont->mutex);
+        struct s_no *p1 = pont->prox;
+        while ((p1 != NULL))
+        {
+            // TODO testar
+            // ele nao precisa bloquear na verdade, mas essa funcao é necessaria so pra ele testar
+            pthread_mutex_lock(&p1->mutex);
+            printf("%d ", p1->num);
+            pthread_mutex_unlock(&p1->mutex);
+            p1 = p1->prox;
+            // TODO bloquear o prox tambem?
+        }
+    }
+    fflush(stdout);
+    //  so pra ele nao reclamar
+
     return args;
 }
 
@@ -207,7 +231,7 @@ int main()
 
     // thread principal
 
-    FILE *arqv = fopen("100.txt", "r");
+    FILE *arqv = fopen("1000000.txt", "r");
 
     // mede o tamanho
     fseek(arqv, 0, SEEK_END); // Seek to the end
@@ -245,22 +269,20 @@ int main()
     // tem um warning entao eu tirei
     numeros[nms] = '\0';
 
-    // fflush(stdout);
+    printf("chegou");
+    fflush(stdout);
     //  strtok
     //
     //  free(texto);
-    mutexes = malloc(nms * sizeof(pthread_mutex_t));
-    for (int i = 0; i < nms; i++)
-    {
-        mutexes[i] = PTHREAD_MUTEX_INITIALIZER;
-    }
 
     // s4 = sem_open("/sem4", O_CREAT, 0660, 4);
     //  thread principal
     inserirTotal(&L, numeros, nms);
     // thread principal
 
-    // printaLista(L);
+    printf("chegou");
+    fflush(stdout);
+    printaLista(L);
 
     pthread_t *thread_id[3] = {NULL, NULL, NULL};
 
