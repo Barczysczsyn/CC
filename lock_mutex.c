@@ -79,14 +79,10 @@ void inserirTotal(struct s_no **pont, int *num, int tam)
 
 static void *removerPares(void *args)
 {
-    // FIXME tirar?
-    // int cont = 0;
-    //  void *saida;
     struct s_no **pont = (struct s_no **)args;
 
     // remove o primeiro nó
 
-    // FIXME ver se ta certo
     if (*pont == NULL)
     {
 
@@ -231,7 +227,7 @@ int main()
 
     // thread principal
 
-    FILE *arqv = fopen("1000000.txt", "r");
+    FILE *arqv = fopen("100.txt", "r");
 
     // mede o tamanho
     fseek(arqv, 0, SEEK_END); // Seek to the end
@@ -269,7 +265,6 @@ int main()
     // tem um warning entao eu tirei
     numeros[nms] = '\0';
 
-    printf("chegou");
     fflush(stdout);
     //  strtok
     //
@@ -280,9 +275,8 @@ int main()
     inserirTotal(&L, numeros, nms);
     // thread principal
 
-    printf("chegou");
     fflush(stdout);
-    printaLista(L);
+    //printaLista(L);
 
     pthread_t *thread_id[3] = {NULL, NULL, NULL};
 
@@ -304,9 +298,6 @@ int main()
     pthread_create((&thread_id[2]), NULL, printaLista, L);
     // 3 thread
 
-    // aparentemente funciona até aqui
-
-    // causado pelo fclose de alguma forma???
     //
 
     pthread_join(thread_id[0], NULL);

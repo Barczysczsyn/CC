@@ -1,0 +1,13 @@
+addi $s0,$zero, 0xFF	#a cor a ser pintada
+lui $s1,0x1001		#endereco base do array ( = .data)
+addi $s2,$zero,512	#numero de colunas
+addi $s3,$zero,10	#numero de linhas a pintar
+mul $s4,$s2,$s3		#numero total de units (nesses pixels)
+
+INICIO:
+	beq $s4,$zero,FIM
+	sw $s0,0($s1)
+	addi $s1,$s1,4
+	addi $s4,$s4,-1
+	j INICIO	
+FIM:
