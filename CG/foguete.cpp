@@ -60,7 +60,7 @@ void animate(int value)
 {
    if (animateMode)
    {
-      angulo += 1;
+      angulo -= 1;
       angle += 10;
       if (angle > 360.0)
          angle -= 360.0;
@@ -200,101 +200,106 @@ void setup(void)
    glPopMatrix();
    glEndList();
 }
-
-// Drawing routine.
-void drawScene(void)
-{
+void drawScene(void) {
    glListBase(base);
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
    glLoadIdentity();
-   gluLookAt(0.0, 0.0, 6.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 
-   glLightfv(GL_LIGHT3, GL_POSITION, posFogo);
+   // Afasta a câmera para enxergar toda a montanha e a órbita do foguete
+   gluLookAt(0.0, 12.0, 35.0,  // Posição da câmera (X, Y, Z)
+             0.0, 0.0, 0.0,    // Para onde ela olha (centro da montanha)
+             0.0, 1.0, 0.0);   // Vetor UP
 
-   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-   glColor3f(0.5, 0.5, 0.5);
+             GLfloat posLuz0[] = {10.0f, 20.0f, 10.0f, 1.0f};
+             glLightfv(GL_LIGHT0, GL_POSITION, posLuz0);
 
+   // Rotação manual da cena pelas teclas x, y, z
    glRotatef(Zangle, 0.0, 0.0, 1.0);
    glRotatef(Yangle, 0.0, 1.0, 0.0);
    glRotatef(Xangle, 1.0, 0.0, 0.0);
 
-   // pega a cena inteira e joga pro raio
-   glTranslatef(0.0, 0, -15.0f);
-   glRotatef(angulo, 0, 1.0, 0);
+   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-   // Torpedo body.
-   gluCylinder(qobj, 0.5, 0.5, 3.0, 15, 15);
-
-   // Torpedo nose.
+   // ==========================================
+   // 1. CENÁRIO ESTÁTICO (Chão e Montanha)
+   // ==========================================
    glPushMatrix();
-   glTranslatef(0.0, 0.0, 3.0);
-   // glRotatef(90.0, 1.0, 0.0, 0.0);
-   // drawHemisphere(0.5, 10, 10);
-   glutSolidCone(0.5, 1, 15, 5);
+      // Desenhar o chão na base (Y = -5)
+      glColor3f(0.2f, 0.7f, 0.3f);
+      glBegin(GL_QUADS);
+         glVertex3f(-25.0f, -5.0f, -25.0f);
+         glVertex3f( 25.0f, -5.0f, -25.0f);
+         glVertex3f( 25.0f, -5.0f,  25.0f);
+         glVertex3f(-25.0f, -5.0f,  25.0f);
+      glEnd();
+
+      // Desenhar montanha no centro (0, -5, 0)
+      glColor3f(0.3f, 0.1f, 0.05f);
+      glPushMatrix();
+         glTranslatef(0.0f, -5.0f, 0.0f); // Apoia a base no chão
+         glRotatef(-90.0f, 1.0f, 0.0f, 0.0f); // Aponta o cone para cima
+         glutSolidCone(10.0, 15.0, 20, 20);
+      glPopMatrix();
    glPopMatrix();
 
-   // Three fins.
+   // ==========================================
+   // 2. FOGUETE EM ÓRBITA
+   // ==========================================
    glPushMatrix();
+      // Passo A: Gira ao redor do centro da montanha (Eixo Y)
+      glRotatef(angulo, 0.0f, 1.0f, 0.0f);
 
-   // glCallList(base);
-   glRotatef(120.0, 0.0, 0.0, 1.0);
-   glCallList(base);
-   glRotatef(120.0, 0.0, 0.0, 1.0);
-   glCallList(base);
-   glPopMatrix();
+      // Passo B: Afasta do centro para definir o raio da órbita (raio = 14) e altura (Y = 2)
+      glTranslatef(14.0f, 2.0f, 0.0f);
 
-   // Backside disk.
-   gluDisk(qobj, 0.0, 0.5, 10, 10);
+      // Nota: Como o cilindro/cone do torpedo aponta para +Z por padrão,
+      // ao transladar em +X e girar no eixo Y, o bico já aponta para a frente do movimento!
+      // Se ele voar de ré, descomente a linha abaixo:
+      // glRotatef(180.0f, 0.0f, 1.0f, 0.0f);
 
-   // Propeller stem.
-   glPushMatrix();
-   glTranslatef(0.0, 0.0, -0.3);
-   gluCylinder(qobj, 0.2, 0.2, 0.3, 5, 5);
-   glPopMatrix();
+      glColor3f(0.5f, 0.5f, 0.5f);
 
-   // FOGO
-   GLfloat cordoFogo[] = {1, (float)(rand() % 2), 0.0f, 1.0f};
-   glMaterialfv(GL_FRONT, GL_EMISSION, cordoFogo);
-   // gluSphere(qobj,1,15,15);
-   glTranslatef(0.0, 0, -0.5f);
-   glutSolidSphere(rand() % 2, 15, 15);
-   // fogo
+      // Corpo do torpedo
+      gluCylinder(qobj, 0.5, 0.5, 3.0, 15, 15);
 
-   // zera a emissao
-   glMaterialfv(GL_FRONT, GL_EMISSION, corPadrao);
+      // Bico do torpedo
+      glPushMatrix();
+         glTranslatef(0.0, 0.0, 3.0);
+         glutSolidCone(0.5, 1.0, 15, 5);
+      glPopMatrix();
 
-   // move pro chao
-   glTranslatef(0.0, -15.0f, 0);
-   glColor3f(0.2f, 0.7f, 0.3f); // Cor verde
 
-   // desenhar o chao
-   glBegin(GL_QUADS);
-   glVertex3f(-20.0f, 0.0f, -20.0f);
-   glVertex3f(20.0f, 0.0f, -20.0f);
-   glVertex3f(20.0f, 0.0f, 20.0f);
-   glVertex3f(-20.0f, 0.0f, 20.0f);
-   glEnd();
+      // Disco traseiro
+      gluDisk(qobj, 0.0, 0.5, 10, 10);
 
-   // volta ao nomral
-   glTranslatef(0.0, 15.0f, 0);
-   // desenhar montanha
-   glColor3f(0.3, 0.1, 0.05);
-   glPushMatrix();
-   glRotatef(-90, 1, 0, 0);
-   glTranslatef(0.0, 0, -15.0f);
-   glutSolidCone(10, 10, 15, 15);
-   glPopMatrix();
+      // Haste traseira
+      glPushMatrix();
+         glTranslatef(0.0, 0.0, -0.3);
+         gluCylinder(qobj, 0.2, 0.2, 0.3, 5, 5);
+      glPopMatrix();
+
+      // Fogo do propulsor (isolado em sua própria matriz para não deslocar o resto)
+      glPushMatrix();
+         GLfloat cordoFogo[] = {1.0f, (float)(rand() % 2), 0.0f, 1.0f};
+         glMaterialfv(GL_FRONT, GL_EMISSION, cordoFogo);
+         glTranslatef(0.0f, 0.0f, -0.6f);
+         // Escala pequena aleatória para simular chama piscando sem ficar gigante
+         float escalaFogo = 0.3f + ((rand() % 10) / 20.0f);
+         glutSolidSphere(escalaFogo, 10, 10);
+         glMaterialfv(GL_FRONT, GL_EMISSION, corPadrao); // Zera a emissão
+      glPopMatrix();
+
+   glPopMatrix(); // Fim da órbita do foguete
 
    glutSwapBuffers();
 }
 
-// OpenGL window reshape routine.
-void resize(int w, int h)
-{
+void resize(int w, int h) {
    glViewport(0, 0, (GLsizei)w, (GLsizei)h);
    glMatrixMode(GL_PROJECTION);
    glLoadIdentity();
-   gluPerspective(60.0, (float)w / (float)h, 1.0, 50.0);
+   // Aumentado zFar de 50.0 para 150.0 para não cortar o fundo da cena
+   gluPerspective(60.0, (float)w / (float)h, 1.0, 150.0);
    glMatrixMode(GL_MODELVIEW);
 }
 
